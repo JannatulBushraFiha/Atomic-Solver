@@ -1,0 +1,6 @@
+# ninja log v6
+1	667	1786654862242131590	CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o	fe401831dae3cfb0
+668	804	1786654862909519156	PerfectFitSolver	63d8e76f9f5f2df5
+14	598	1787012850703257813	CMakeFiles/PerfectFitSolver.dir/src/PackingSolver.cpp.o	b20188f718eb22f8
+13	633	1787012850702982725	CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o	7e18b48c3b4c5733
+634	814	1787012851323045779	PerfectFitSolver	b1f8f818819b37d7
