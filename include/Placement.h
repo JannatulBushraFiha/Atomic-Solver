@@ -1,11 +1,16 @@
-#pragma once
+#ifndef PLACEMENT_H
+#define PLACEMENT_H
 
 #include <string>
 #include "Position.h"
-#include "Orientation.h"
 
-struct Placement {
-    std::string itemCode;
+class Placement {
+public:
+    std::string boxRef;
+    std::string itemRef;
     Position position;
-    Orientation orientation;
+
+    Placement(std::string box = "", std::string item = "", Position pos = Position());
 };
+
+#endif

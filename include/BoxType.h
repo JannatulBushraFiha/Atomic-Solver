@@ -1,19 +1,19 @@
-#pragma once
+#ifndef BOXTYPE_H
+#define BOXTYPE_H
 
 #include <string>
-#include <optional>
+#include "Dimensions.h"
 
-struct BoxType {
+class BoxType {
+public:
     std::string reference;
+    Dimensions d;
+    double maxWeight;
+    double boxWeight;
+    bool active;
+    int maximumBoxes;
 
-    int width;
-    int length;
-    int depth;
-
-    double maxWeight =0;
-    double boxWeight =0;
-
-    bool active = true;
-
-   int maximumBoxes = -1;
+    BoxType(std::string ref, Dimensions dim, double maxW, double boxW, bool isActive = true, int maxBoxes = -1);
 };
+
+#endif

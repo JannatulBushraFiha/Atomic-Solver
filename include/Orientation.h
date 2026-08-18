@@ -1,7 +1,10 @@
-#pragma once
+#ifndef ORIENTATION_H
+#define ORIENTATION_H
 
-struct Orientation {
-    int width;
-    int length;
-    int depth;
+// not doing orientation for MVP, out of scope for now
+enum class Orientation {
+    NONE,
+    UPRIGHT
 };
+
+#endif

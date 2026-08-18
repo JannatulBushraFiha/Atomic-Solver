@@ -1,14 +1,12 @@
-#pragma once
+#ifndef PACKINGSOLVER_H
+#define PACKINGSOLVER_H
 
-#include <vector>
-#include "Item.h"
-#include "BoxType.h"
+#include "Problem.h"
 #include "PackingSolution.h"
 
 class PackingSolver {
 public:
-    PackingSolution solve(
-        const std::vector<Item>& items,
-        const std::vector<BoxType>& boxes
-    );
+    PackingSolution solve(const Problem& problem);
 };
+
+#endif

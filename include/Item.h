@@ -1,17 +1,18 @@
-#pragma once
+#ifndef ITEM_H
+#define ITEM_H
 
 #include <string>
-#include <optional>
+#include "Dimensions.h"
 
-struct Item {
+class Item {
+public:
     std::string itemCode;
     std::string itemReference;
-
-    int width;
-    int length;
-    int depth;
-
+    Dimensions d;
     double weight;
+    std::string boxGroup;
 
-  std::string boxGroup;
+    Item(std::string code, std::string ref, Dimensions dim, double w, std::string group = "");
 };
+
+#endif
