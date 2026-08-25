@@ -1,6 +1,12 @@
 # ninja log v6
-1	667	1786654862242131590	CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o	fe401831dae3cfb0
-668	804	1786654862909519156	PerfectFitSolver	63d8e76f9f5f2df5
 14	598	1787012850703257813	CMakeFiles/PerfectFitSolver.dir/src/PackingSolver.cpp.o	b20188f718eb22f8
-13	633	1787012850702982725	CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o	7e18b48c3b4c5733
 634	814	1787012851323045779	PerfectFitSolver	b1f8f818819b37d7
+13	633	1787012850702982725	CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o	7e18b48c3b4c5733
+0	185	1787650863205938282	CMakeFiles/solver.dir/src/PackingSolution.cpp.o	ff292a9f008d4948
+0	185	1787650863205694238	CMakeFiles/solver.dir/src/Item.cpp.o	1cb0dde375822a36
+1	185	1787650863206481453	CMakeFiles/solver.dir/src/Position.cpp.o	d274d8b5a44b0473
+1	186	1787650863206302577	CMakeFiles/solver.dir/src/Placement.cpp.o	52689ea7f79ab4dc
+0	388	1787650863205819823	CMakeFiles/solver.dir/src/Orientation.cpp.o	b2b8027083ca36f4
+1	674	1787650863206080617	CMakeFiles/solver.dir/src/PackingSolver.cpp.o	927451155f368d11
+0	1233	1787650863205496028	CMakeFiles/solver.dir/src/main.cpp.o	e7560c2082983568
+1233	1415	1787650864438533703	solver	449a2c724501eef9

@@ -41,43 +41,78 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/
 # =============================================================================
-# Object build statements for EXECUTABLE target PerfectFitSolver
+# Object build statements for EXECUTABLE target solver
 
 
 #############################################
-# Order-only phony target for PerfectFitSolver
+# Order-only phony target for solver
 
-build cmake_object_order_depends_target_PerfectFitSolver: phony || .
+build cmake_object_order_depends_target_solver: phony || .
 
-build CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o: CXX_COMPILER__PerfectFitSolver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/main.cpp || cmake_object_order_depends_target_PerfectFitSolver
-  DEP_FILE = CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o.d
-  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+build CMakeFiles/solver.dir/src/main.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/main.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/main.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
   INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
-  OBJECT_DIR = CMakeFiles/PerfectFitSolver.dir
-  OBJECT_FILE_DIR = CMakeFiles/PerfectFitSolver.dir/src
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
 
-build CMakeFiles/PerfectFitSolver.dir/src/PackingSolver.cpp.o: CXX_COMPILER__PerfectFitSolver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolver.cpp || cmake_object_order_depends_target_PerfectFitSolver
-  DEP_FILE = CMakeFiles/PerfectFitSolver.dir/src/PackingSolver.cpp.o.d
-  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+build CMakeFiles/solver.dir/src/Item.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Item.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/Item.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
   INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
-  OBJECT_DIR = CMakeFiles/PerfectFitSolver.dir
-  OBJECT_FILE_DIR = CMakeFiles/PerfectFitSolver.dir/src
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
+
+build CMakeFiles/solver.dir/src/Orientation.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Orientation.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/Orientation.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+  INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
+
+build CMakeFiles/solver.dir/src/PackingSolution.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolution.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/PackingSolution.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+  INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
+
+build CMakeFiles/solver.dir/src/PackingSolver.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolver.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/PackingSolver.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+  INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
+
+build CMakeFiles/solver.dir/src/Placement.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Placement.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/Placement.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+  INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
+
+build CMakeFiles/solver.dir/src/Position.cpp.o: CXX_COMPILER__solver_unscanned_Debug /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Position.cpp || cmake_object_order_depends_target_solver
+  DEP_FILE = CMakeFiles/solver.dir/src/Position.cpp.o.d
+  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
+  INCLUDES = -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include
+  OBJECT_DIR = CMakeFiles/solver.dir
+  OBJECT_FILE_DIR = CMakeFiles/solver.dir/src
 
 
 # =============================================================================
-# Link build statements for EXECUTABLE target PerfectFitSolver
+# Link build statements for EXECUTABLE target solver
 
 
 #############################################
-# Link the executable PerfectFitSolver
+# Link the executable solver
 
-build PerfectFitSolver: CXX_EXECUTABLE_LINKER__PerfectFitSolver_Debug CMakeFiles/PerfectFitSolver.dir/src/main.cpp.o CMakeFiles/PerfectFitSolver.dir/src/PackingSolver.cpp.o
+build solver: CXX_EXECUTABLE_LINKER__solver_Debug CMakeFiles/solver.dir/src/main.cpp.o CMakeFiles/solver.dir/src/Item.cpp.o CMakeFiles/solver.dir/src/Orientation.cpp.o CMakeFiles/solver.dir/src/PackingSolution.cpp.o CMakeFiles/solver.dir/src/PackingSolver.cpp.o CMakeFiles/solver.dir/src/Placement.cpp.o CMakeFiles/solver.dir/src/Position.cpp.o
   FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk
-  OBJECT_DIR = CMakeFiles/PerfectFitSolver.dir
+  OBJECT_DIR = CMakeFiles/solver.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = PerfectFitSolver
-  TARGET_PDB = PerfectFitSolver.dbg
+  TARGET_FILE = solver
+  TARGET_PDB = solver.dbg
 
 
 #############################################
@@ -114,7 +149,7 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 #############################################
 # Folder: /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build
 
-build all: phony PerfectFitSolver
+build all: phony solver
 
 # =============================================================================
 # Built-in targets
