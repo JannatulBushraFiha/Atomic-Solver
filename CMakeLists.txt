@@ -4,9 +4,12 @@ project(AtomicFitSolver)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include)
+include_directories(
+    include
+    lib
+    )
 
-add_executable(solver
+add_executable(AtomicFitSolver
     src/main.cpp
     src/Item.cpp
     src/Orientation.cpp
@@ -14,4 +17,9 @@ add_executable(solver
     src/PackingSolver.cpp
     src/Placement.cpp
     src/Position.cpp
+    src/server.cpp
 )
+
+if(WIN32)
+    target_link_libraries(AtomicFitSolver PRIVATE ws2_32 wsock32)
+endif()

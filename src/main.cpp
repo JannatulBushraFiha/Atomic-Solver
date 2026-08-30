@@ -2,11 +2,13 @@
 #include <sstream>
 #include <string>
 
-#include "json.hpp"
+//#include "json.hpp"
 #include "BoxType.hpp"
 #include "Item.hpp"
 #include "PackingSolver.hpp"
+#include "server.hpp"
 
+/*
 using json = nlohmann::json;
 
 BoxType parseBoxType(const json& j) {
@@ -33,56 +35,11 @@ Item parseItem(const json& j) {
     item.boxGroup = j.value("BoxGroup", std::string(""));
     return item;
 }
+*/
 
 int main() {
-    std::stringstream buffer;
-    buffer << std::cin.rdbuf();
+    // Start the server on port 8080
+    startServer(8080);
 
-    json input;
-    try {
-        input = json::parse(buffer.str());
-    } catch (const std::exception& e) {
-        std::cout << json{{"error", std::string("Invalid JSON: ") + e.what()}}.dump();
-        return 1;
-    }
-
-    std::vector<BoxType> boxes;
-    std::vector<Item> items;
-
-    try {
-        for (const auto& b : input.at("boxTypes")) boxes.push_back(parseBoxType(b));
-        for (const auto& i : input.at("items"))    items.push_back(parseItem(i));
-    } catch (const std::exception& e) {
-        std::cout << json{{"error", std::string("Bad input: ") + e.what()}}.dump();
-        return 1;
-    }
-
-    PackingSolver solver;
-    PackingSolution solution = solver.solve(items, boxes);
-
-    json output;
-    output["placements"] = json::array();
-    for (const auto& p : solution.placements) {
-        output["placements"].push_back({
-            {"itemCode", p.itemCode},
-            {"boxReference", p.boxReference},
-            {"boxInstance", p.boxInstance},
-            {"position", {{"x", p.position.x}, {"y", p.position.y}, {"z", p.position.z}}},
-            {"placedDimension", {{"width", p.placedDimension.width}, {"length", p.placedDimension.length}, {"depth", p.placedDimension.depth}}}
-        });
-    }
-
-    output["unplacedItems"] = solution.unplacedItems;
-
-    output["usedBoxes"] = json::array();
-    for (const auto& u : solution.usedBoxes) {
-        output["usedBoxes"].push_back({
-            {"boxReference", u.boxReference},
-            {"boxInstance", u.boxInstance},
-            {"totalWeight", u.totalWeight}
-        });
-    }
-
-    std::cout << output.dump();
     return 0;
 }
