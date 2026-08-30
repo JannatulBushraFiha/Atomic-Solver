@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Dimension.h"
+#include "Dimension.hpp"
 
 struct BoxType {
     std::string reference;

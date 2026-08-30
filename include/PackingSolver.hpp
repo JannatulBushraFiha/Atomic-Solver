@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "Item.h"
-#include "BoxType.h"
-#include "PackingSolution.h"
+#include "Item.hpp"
+#include "BoxType.hpp"
+#include "PackingSolution.hpp"
 
 class PackingSolver {
 public:

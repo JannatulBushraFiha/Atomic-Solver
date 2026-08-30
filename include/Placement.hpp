@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include "Position.h"
-#include "Dimension.h"
+#include "Position.hpp"
+#include "Dimension.hpp"
 
 struct Placement {
     std::string itemCode;

@@ -1,5 +1,5 @@
-#include "PackingSolver.h"
-#include "Orientation.h"
+#include "PackingSolver.hpp"
+#include "Orientation.hpp"
 
 #include <algorithm>
 #include <map>

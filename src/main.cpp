@@ -3,9 +3,9 @@
 #include <string>
 
 #include "json.hpp"
-#include "BoxType.h"
-#include "Item.h"
-#include "PackingSolver.h"
+#include "BoxType.hpp"
+#include "Item.hpp"
+#include "PackingSolver.hpp"
 
 using json = nlohmann::json;
 
