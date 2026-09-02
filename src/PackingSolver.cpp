@@ -116,8 +116,11 @@ PackingSolution PackingSolver::solve(
 
     std::vector<Item> sortedItems = items;
     std::sort(sortedItems.begin(), sortedItems.end(), [](const Item& a, const Item& b) {
-        return volume(a.itemDimension) > volume(b.itemDimension);
-    });
+    long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
+    long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
+    if (areaA != areaB) return areaA > areaB;
+    return volume(a.itemDimension) > volume(b.itemDimension);
+});
 
     std::vector<BoxInstance> openBoxes;
     std::map<std::string, int> boxTypeCount;
