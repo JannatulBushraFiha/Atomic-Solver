@@ -64,7 +64,17 @@ bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacem
     if (!groupCompatible(box, item)) return false;
     if (box.maxWeight > 0 && box.currentWeight + item.weight > box.maxWeight) return false;
 
+    // Sort free spaces: prioritize lowest z (build up), then y, then x
+    std::sort(box.freeSpaces.begin(), box.freeSpaces.end(), [](const FreeSpace& a, const FreeSpace& b) {
+        if (a.z != b.z) return a.z < b.z;
+        if (a.y != b.y) return a.y < b.y;
+        return a.x < b.x;
+    });
+
     auto rotations = Orientation::allRotations(item.itemDimension);
+    // ...rest stays the same
+
+    
 
     for (size_t spaceIdx = 0; spaceIdx < box.freeSpaces.size(); spaceIdx++) {
         for (const Dimension& rot : rotations) {
