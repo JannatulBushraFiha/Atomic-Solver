@@ -86,6 +86,7 @@ double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime
             {"totalWeight", u.totalWeight}
         });
     }
+    output["timeMs"] = elapsedMs;
 
     std::cout << output.dump();
     return 0;
