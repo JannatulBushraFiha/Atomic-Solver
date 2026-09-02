@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <chrono>
 
 #include "json.hpp"
 #include "BoxType.h"
@@ -58,7 +59,10 @@ int main() {
     }
 
     PackingSolver solver;
-    PackingSolution solution = solver.solve(items, boxes);
+auto startTime = std::chrono::high_resolution_clock::now();
+PackingSolution solution = solver.solve(items, boxes);
+auto endTime = std::chrono::high_resolution_clock::now();
+double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
     json output;
     output["placements"] = json::array();
