@@ -14,4 +14,6 @@ add_executable(solver
     src/PackingSolver.cpp
     src/Placement.cpp
     src/Position.cpp
+    src/Constraints.cpp
+    src/Validator.cpp
 )

@@ -1,12 +1,11 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <chrono>
 
 #include "json.hpp"
-#include "BoxType.h"
-#include "Item.h"
-#include "PackingSolver.h"
+#include "BoxType.hpp"
+#include "Item.hpp"
+#include "PackingSolver.hpp"
 
 using json = nlohmann::json;
 
@@ -59,10 +58,7 @@ int main() {
     }
 
     PackingSolver solver;
-auto startTime = std::chrono::high_resolution_clock::now();
-PackingSolution solution = solver.solve(items, boxes);
-auto endTime = std::chrono::high_resolution_clock::now();
-double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
+    PackingSolution solution = solver.solve(items, boxes);
 
     json output;
     output["placements"] = json::array();
@@ -86,7 +82,6 @@ double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime
             {"totalWeight", u.totalWeight}
         });
     }
-    output["timeMs"] = elapsedMs;
 
     std::cout << output.dump();
     return 0;

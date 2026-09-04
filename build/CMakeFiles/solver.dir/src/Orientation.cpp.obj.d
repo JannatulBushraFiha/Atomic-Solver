@@ -1,0 +1,36 @@
+CMakeFiles/solver.dir/src/Orientation.cpp.obj: \
+ C:\Users\azn_l\OneDrive\Desktop\Atomic-Solver\src\Orientation.cpp \
+ C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/include/Orientation.hpp \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/array \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/compare \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/version.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/pstl/pstl_config.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/initializer_list \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/type_traits \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stdexcept_throw.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/exception_defines.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stdexcept_throwfwd.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_algobase.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/cpp_type_traits.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/ext/type_traits.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/ext/numeric_traits.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_pair.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/move.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/utility.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_iterator_base_types.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_iterator_base_funcs.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/concept_check.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/debug/assertions.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_iterator.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/ptr_traits.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/debug/debug.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/predefined_ops.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/stl_function.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/backward/binders.h \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bit \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/concepts \
+ C:/ProgramData/mingw64/mingw64/lib/gcc/x86_64-w64-mingw32/16.1.0/include/c++/bits/range_access.h \
+ C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/include/Dimension.hpp

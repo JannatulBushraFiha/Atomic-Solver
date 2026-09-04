@@ -1,5 +1,5 @@
-#include "PackingSolver.h"
-#include "Orientation.h"
+#include "PackingSolver.hpp"
+#include "Orientation.hpp"
 
 #include <algorithm>
 #include <map>
@@ -64,17 +64,7 @@ bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacem
     if (!groupCompatible(box, item)) return false;
     if (box.maxWeight > 0 && box.currentWeight + item.weight > box.maxWeight) return false;
 
-    // Sort free spaces: prioritize lowest z (build up), then y, then x
-    std::sort(box.freeSpaces.begin(), box.freeSpaces.end(), [](const FreeSpace& a, const FreeSpace& b) {
-        if (a.z != b.z) return a.z < b.z;
-        if (a.y != b.y) return a.y < b.y;
-        return a.x < b.x;
-    });
-
     auto rotations = Orientation::allRotations(item.itemDimension);
-    // ...rest stays the same
-
-    
 
     for (size_t spaceIdx = 0; spaceIdx < box.freeSpaces.size(); spaceIdx++) {
         for (const Dimension& rot : rotations) {
@@ -116,11 +106,8 @@ PackingSolution PackingSolver::solve(
 
     std::vector<Item> sortedItems = items;
     std::sort(sortedItems.begin(), sortedItems.end(), [](const Item& a, const Item& b) {
-    long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
-    long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
-    if (areaA != areaB) return areaA > areaB;
-    return volume(a.itemDimension) > volume(b.itemDimension);
-});
+        return volume(a.itemDimension) > volume(b.itemDimension);
+    });
 
     std::vector<BoxInstance> openBoxes;
     std::map<std::string, int> boxTypeCount;

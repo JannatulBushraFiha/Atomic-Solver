@@ -1,44 +1,56 @@
 [
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/main.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/main.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/main.cpp",
-  "output": "CMakeFiles/solver.dir/src/main.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\main.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\main.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/main.cpp",
+  "output": "CMakeFiles/solver.dir/src/main.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/Item.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Item.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Item.cpp",
-  "output": "CMakeFiles/solver.dir/src/Item.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Item.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Item.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Item.cpp",
+  "output": "CMakeFiles/solver.dir/src/Item.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/Orientation.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Orientation.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Orientation.cpp",
-  "output": "CMakeFiles/solver.dir/src/Orientation.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Orientation.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Orientation.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Orientation.cpp",
+  "output": "CMakeFiles/solver.dir/src/Orientation.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/PackingSolution.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolution.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolution.cpp",
-  "output": "CMakeFiles/solver.dir/src/PackingSolution.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\PackingSolution.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\PackingSolution.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/PackingSolution.cpp",
+  "output": "CMakeFiles/solver.dir/src/PackingSolution.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/PackingSolver.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolver.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/PackingSolver.cpp",
-  "output": "CMakeFiles/solver.dir/src/PackingSolver.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\PackingSolver.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\PackingSolver.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/PackingSolver.cpp",
+  "output": "CMakeFiles/solver.dir/src/PackingSolver.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/Placement.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Placement.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Placement.cpp",
-  "output": "CMakeFiles/solver.dir/src/Placement.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Placement.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Placement.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Placement.cpp",
+  "output": "CMakeFiles/solver.dir/src/Placement.cpp.obj"
 },
 {
-  "directory": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build",
-  "command": "/usr/bin/clang++ -I/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include -g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk -o CMakeFiles/solver.dir/src/Position.cpp.o -c /Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Position.cpp",
-  "file": "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/src/Position.cpp",
-  "output": "CMakeFiles/solver.dir/src/Position.cpp.o"
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Position.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Position.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Position.cpp",
+  "output": "CMakeFiles/solver.dir/src/Position.cpp.obj"
+},
+{
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Constraints.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Constraints.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Constraints.cpp",
+  "output": "CMakeFiles/solver.dir/src/Constraints.cpp.obj"
+},
+{
+  "directory": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe  @CMakeFiles\\solver.dir\\includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\solver.dir\\src\\Validator.cpp.obj -c C:\\Users\\azn_l\\OneDrive\\Desktop\\Atomic-Solver\\src\\Validator.cpp",
+  "file": "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/src/Validator.cpp",
+  "output": "CMakeFiles/solver.dir/src/Validator.cpp.obj"
 }
 ]

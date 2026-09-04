@@ -1,3 +1,3 @@
-/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/solver.dir
-/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/edit_cache.dir
-/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/rebuild_cache.dir
+C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build/CMakeFiles/solver.dir
+C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build/CMakeFiles/edit_cache.dir
+C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/build/CMakeFiles/rebuild_cache.dir

@@ -2,7 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "solver"
+			"path" : "solver.exe"
+		},
+		{
+			"path" : "solver.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -36,20 +39,25 @@
 			}
 		]
 	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 11
+	},
 	"compileGroups" : 
 	[
 		{
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "-g -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk"
+					"fragment" : "-g -std=gnu++17"
 				}
 			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 2,
-					"path" : "/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/include"
+					"path" : "C:/Users/azn_l/OneDrive/Desktop/Atomic-Solver/include"
 				}
 			],
 			"language" : "CXX",
@@ -69,7 +77,9 @@
 				3,
 				4,
 				5,
-				6
+				6,
+				7,
+				8
 			]
 		}
 	],
@@ -83,14 +93,14 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "",
-				"role" : "flags"
+				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
+				"role" : "libraries"
 			}
 		],
 		"language" : "CXX"
 	},
 	"name" : "solver",
-	"nameOnDisk" : "solver",
+	"nameOnDisk" : "solver.exe",
 	"paths" : 
 	{
 		"build" : ".",
@@ -108,7 +118,9 @@
 				3,
 				4,
 				5,
-				6
+				6,
+				7,
+				8
 			]
 		}
 	],
@@ -116,44 +128,92 @@
 	[
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/main.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/Item.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/Orientation.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/PackingSolution.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/PackingSolver.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/Placement.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
 			"compileGroupIndex" : 0,
 			"path" : "src/Position.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
+			"compileGroupIndex" : 0,
+			"path" : "src/Constraints.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"backtraces" : 
+			[
+				1
+			],
+			"compileGroupIndex" : 0,
+			"path" : "src/Validator.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

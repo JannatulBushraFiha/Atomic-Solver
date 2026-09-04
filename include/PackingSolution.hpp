@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <string>
-#include "Placement.h"
+#include "Placement.hpp"
 
 struct UsedBox {
     std::string boxReference;
