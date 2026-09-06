@@ -7,6 +7,7 @@
 #include "Constraints.hpp"
 #include "Item.hpp"
 #include "PackingSolver.hpp"
+#include "Validator.hpp"
 
 using json = nlohmann::json;
 
@@ -112,6 +113,20 @@ int main() {
             {"itemCode", v.itemCode},
             {"message", v.message}
         });
+    }
+
+    if (input.value("validate", true)) {
+        ValidationResult validation = Validator::validate(solution, items, boxes, constraints);
+
+        output["validation"]["valid"] = validation.valid;
+        output["validation"]["violations"] = json::array();
+        for (const auto& v : validation.violations) {
+            output["validation"]["violations"].push_back({
+                {"code", v.code},
+                {"itemCode", v.itemCode},
+                {"message", v.message}
+            });
+        }
     }
 
     std::cout << output.dump();
