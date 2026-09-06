@@ -4,6 +4,7 @@
 
 #include "json.hpp"
 #include "BoxType.hpp"
+#include "Constraints.hpp"
 #include "Item.hpp"
 #include "PackingSolver.hpp"
 
@@ -34,6 +35,23 @@ Item parseItem(const json& j) {
     return item;
 }
 
+Constraints parseConstraints(const json& j) {
+    Constraints constraints;
+    constraints.maxItemWeight = j.value("MaxItemWeight", 0.0);
+    constraints.maxItemVolume = j.value("MaxItemVolume", 0LL);
+    constraints.enforceBoxGroups = j.value("EnforceBoxGroups", true);
+    constraints.allowRotation = j.value("AllowRotation", true);
+
+    if (j.contains("MaxItemDimension")) {
+        const json& dim = j.at("MaxItemDimension");
+        constraints.maxItemDimension.width  = dim.value("Width", 0);
+        constraints.maxItemDimension.length = dim.value("Length", 0);
+        constraints.maxItemDimension.depth  = dim.value("Depth", 0);
+    }
+
+    return constraints;
+}
+
 int main() {
     std::stringstream buffer;
     buffer << std::cin.rdbuf();
@@ -48,10 +66,14 @@ int main() {
 
     std::vector<BoxType> boxes;
     std::vector<Item> items;
+    Constraints constraints;
 
     try {
         for (const auto& b : input.at("boxTypes")) boxes.push_back(parseBoxType(b));
         for (const auto& i : input.at("items"))    items.push_back(parseItem(i));
+        if (input.contains("constraints")) {
+            constraints = parseConstraints(input.at("constraints"));
+        }
     } catch (const std::exception& e) {
         std::cout << json{{"error", std::string("Bad input: ") + e.what()}}.dump();
         return 1;
