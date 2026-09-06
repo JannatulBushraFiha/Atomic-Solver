@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "Placement.hpp"
+#include "Violation.hpp"
 
 struct UsedBox {
     std::string boxReference;
@@ -14,4 +15,5 @@ struct PackingSolution {
     std::vector<Placement> placements;
     std::vector<std::string> unplacedItems;
     std::vector<UsedBox> usedBoxes;
+    std::vector<Violation> violations;
 };

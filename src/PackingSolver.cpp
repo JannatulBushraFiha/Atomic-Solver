@@ -1,5 +1,4 @@
 #include "PackingSolver.hpp"
-#include "Orientation.hpp"
 
 #include <algorithm>
 #include <map>
@@ -30,10 +29,8 @@ bool fitsInSpace(const Dimension& dim, const FreeSpace& space) {
            dim.depth <= space.depth;
 }
 
-bool groupCompatible(const BoxInstance& box, const Item& item) {
-    if (box.group.empty()) return true;
-    if (item.boxGroup.empty()) return true;
-    return box.group == item.boxGroup;
+BoxState stateOf(const BoxInstance& box) {
+    return BoxState { box.maxWeight, box.currentWeight, box.group };
 }
 
 void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dimension& placedDim) {
@@ -60,11 +57,12 @@ void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dime
     }
 }
 
-bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacement) {
-    if (!groupCompatible(box, item)) return false;
-    if (box.maxWeight > 0 && box.currentWeight + item.weight > box.maxWeight) return false;
+bool tryPlaceInInstance(BoxInstance& box, const Item& item, const Constraints& constraints, Placement& outPlacement) {
+    if (!constraints.allowsPlacement(stateOf(box), item)) {
+        return false;
+    }
 
-    auto rotations = Orientation::allRotations(item.itemDimension);
+    const std::vector<Dimension> rotations = constraints.permittedRotations(item);
 
     for (size_t spaceIdx = 0; spaceIdx < box.freeSpaces.size(); spaceIdx++) {
         for (const Dimension& rot : rotations) {
@@ -92,7 +90,8 @@ bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacem
 
 PackingSolution PackingSolver::solve(
     const std::vector<Item>& items,
-    const std::vector<BoxType>& boxes
+    const std::vector<BoxType>& boxes,
+    const Constraints& constraints
 ) {
     PackingSolution solution;
 
@@ -113,11 +112,18 @@ PackingSolution PackingSolver::solve(
     std::map<std::string, int> boxTypeCount;
 
     for (const auto& item : sortedItems) {
+        Violation violation;
+        if (!constraints.checkItem(item, boxes, violation)) {
+            solution.unplacedItems.push_back(item.itemCode);
+            solution.violations.push_back(violation);
+            continue;
+        }
+
         bool placed = false;
         Placement placement;
 
         for (auto& box : openBoxes) {
-            if (tryPlaceInInstance(box, item, placement)) {
+            if (tryPlaceInInstance(box, item, constraints, placement)) {
                 solution.placements.push_back(placement);
                 placed = true;
                 break;
@@ -127,10 +133,18 @@ PackingSolution PackingSolver::solve(
         if (!placed) {
             for (const auto& boxType : activeBoxes) {
                 int usedCount = boxTypeCount[boxType.reference];
-                if (boxType.maximumBoxes != -1 && usedCount >= boxType.maximumBoxes) continue;
-                if (boxType.maxWeight > 0 && item.weight > boxType.maxWeight) continue;
+                if (boxType.maximumBoxes != -1 && usedCount >= boxType.maximumBoxes) {
+                    continue;
+                }
 
-                auto rotations = Orientation::allRotations(item.itemDimension);
+                // An empty box of this type, to ask the constraints whether the item could
+                // ever go in one before we pay the cost of opening it.
+                const BoxState emptyBox { boxType.maxWeight, 0.0, "" };
+                if (!constraints.allowsPlacement(emptyBox, item)) {
+                    continue;
+                }
+
+                const std::vector<Dimension> rotations = constraints.permittedRotations(item);
                 bool fitsAny = false;
                 for (const Dimension& rot : rotations) {
                     if (rot.width <= boxType.boxDimension.width &&
@@ -140,7 +154,9 @@ PackingSolution PackingSolver::solve(
                         break;
                     }
                 }
-                if (!fitsAny) continue;
+                if (!fitsAny) {
+                    continue;
+                }
 
                 BoxInstance newBox;
                 newBox.reference = boxType.reference;
@@ -152,7 +168,7 @@ PackingSolution PackingSolver::solve(
                 boxTypeCount[boxType.reference] = usedCount + 1;
                 openBoxes.push_back(newBox);
 
-                if (tryPlaceInInstance(openBoxes.back(), item, placement)) {
+                if (tryPlaceInInstance(openBoxes.back(), item, constraints, placement)) {
                     solution.placements.push_back(placement);
                     placed = true;
                 }
@@ -160,8 +176,15 @@ PackingSolution PackingSolver::solve(
             }
         }
 
+        // The item passed screening so a box exists that could hold it, but by the time we
+        // got here the boxes were either used up or too fragmented to take it.
         if (!placed) {
             solution.unplacedItems.push_back(item.itemCode);
+            solution.violations.push_back({
+                "NO_SPACE_AVAILABLE",
+                item.itemCode,
+                "No room left in the boxes available for this order"
+            });
         }
     }
 

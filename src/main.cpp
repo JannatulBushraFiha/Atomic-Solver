@@ -80,7 +80,7 @@ int main() {
     }
 
     PackingSolver solver;
-    PackingSolution solution = solver.solve(items, boxes);
+    PackingSolution solution = solver.solve(items, boxes, constraints);
 
     json output;
     output["placements"] = json::array();
@@ -102,6 +102,15 @@ int main() {
             {"boxReference", u.boxReference},
             {"boxInstance", u.boxInstance},
             {"totalWeight", u.totalWeight}
+        });
+    }
+
+    output["violations"] = json::array();
+    for (const auto& v : solution.violations) {
+        output["violations"].push_back({
+            {"code", v.code},
+            {"itemCode", v.itemCode},
+            {"message", v.message}
         });
     }
 
