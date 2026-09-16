@@ -1,17 +1,17 @@
 #pragma once
 
 #include <string>
-#include "Dimension.h"
-
+#include <optional>
 
 struct Item {
     std::string itemCode;
     std::string itemReference;
-    Dimension itemDimension;
-    std::string boxGroup;
-    bool isFragile = false;
-    bool isDangerousGoods = false;
-    std::string dangerousGoodsClass;
-    
-    double weight =0.0;
+
+    int width;
+    int length;
+    int depth;
+
+    double weight;
+
+  std::string boxGroup;
 };

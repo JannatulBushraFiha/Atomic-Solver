@@ -1,14 +1,17 @@
 #pragma once
+
 #include <string>
-#include "Dimension.h"
+#include <optional>
 
 struct BoxType {
     std::string reference;
 
-    Dimension boxDimension;
+    int width;
+    int length;
+    int depth;
 
-    double maxWeight =0.0;
-    double boxWeight =0.0;
+    double maxWeight =0;
+    double boxWeight =0;
 
     bool active = true;
 

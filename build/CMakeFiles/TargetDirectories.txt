@@ -1,0 +1,3 @@
+/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/PerfectFitSolver.dir
+/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/edit_cache.dir
+/Users/jannatulbushrafiha/Downloads/AtomicFitSolver/build/CMakeFiles/rebuild_cache.dir
