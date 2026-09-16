@@ -17,6 +17,9 @@ struct BoxInstance {
     double maxWeight;
     double currentWeight = 0.0;
     std::string group; // empty = not yet assigned to a group
+    bool hasDangerousGoods = false;
+    std::string dangerousGoodsClass;
+    bool hasFragile = false;
     std::vector<FreeSpace> freeSpaces;
 };
 
@@ -28,12 +31,6 @@ bool fitsInSpace(const Dimension& dim, const FreeSpace& space) {
     return dim.width <= space.width &&
            dim.length <= space.length &&
            dim.depth <= space.depth;
-}
-
-bool groupCompatible(const BoxInstance& box, const Item& item) {
-    if (box.group.empty()) return true;
-    if (item.boxGroup.empty()) return true;
-    return box.group == item.boxGroup;
 }
 
 void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dimension& placedDim) {
@@ -60,9 +57,20 @@ void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dime
     }
 }
 
-bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacement) {
-    if (!groupCompatible(box, item)) return false;
-    if (box.maxWeight > 0 && box.currentWeight + item.weight > box.maxWeight) return false;
+BoxState toBoxState(const BoxInstance& box) {
+    BoxState state;
+    state.maxWeight = box.maxWeight;
+    state.currentWeight = box.currentWeight;
+    state.group = box.group;
+    state.hasDangerousGoods = box.hasDangerousGoods;
+    state.dangerousGoodsClass = box.dangerousGoodsClass;
+    state.hasFragile = box.hasFragile;
+    return state;
+}
+
+bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacement, const Constraints& constraints) {
+    Violation ignored;
+    if (!constraints.allowsPlacement(toBoxState(box), item, ignored)) return false;
 
     // Sort free spaces: prioritize lowest z (build up), then y, then x
     std::sort(box.freeSpaces.begin(), box.freeSpaces.end(), [](const FreeSpace& a, const FreeSpace& b) {
@@ -71,10 +79,7 @@ bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacem
         return a.x < b.x;
     });
 
-    auto rotations = Orientation::allRotations(item.itemDimension);
-    // ...rest stays the same
-
-    
+    auto rotations = constraints.permittedRotations(item);
 
     for (size_t spaceIdx = 0; spaceIdx < box.freeSpaces.size(); spaceIdx++) {
         for (const Dimension& rot : rotations) {
@@ -90,6 +95,11 @@ bool tryPlaceInInstance(BoxInstance& box, const Item& item, Placement& outPlacem
                 splitFreeSpace(box.freeSpaces, spaceIdx, rot);
                 box.currentWeight += item.weight;
                 if (!item.boxGroup.empty()) box.group = item.boxGroup;
+                if (item.isDangerousGoods) {
+                    box.hasDangerousGoods = true;
+                    box.dangerousGoodsClass = item.dangerousGoodsClass;
+                }
+                if (item.isFragile) box.hasFragile = true;
 
                 return true;
             }
@@ -116,21 +126,29 @@ PackingSolution PackingSolver::solve(
 
     std::vector<Item> sortedItems = items;
     std::sort(sortedItems.begin(), sortedItems.end(), [](const Item& a, const Item& b) {
-    long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
-    long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
-    if (areaA != areaB) return areaA > areaB;
-    return volume(a.itemDimension) > volume(b.itemDimension);
-});
+        long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
+        long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
+        if (areaA != areaB) return areaA > areaB;
+        return volume(a.itemDimension) > volume(b.itemDimension);
+    });
 
     std::vector<BoxInstance> openBoxes;
     std::map<std::string, int> boxTypeCount;
 
     for (const auto& item : sortedItems) {
+        // Pre-screen: is this item even placeable given the constraints and available boxes?
+        Violation preCheckViolation;
+        if (!constraints.checkItem(item, boxes, preCheckViolation)) {
+            solution.unplacedItems.push_back(item.itemCode);
+            solution.violations.push_back(preCheckViolation);
+            continue;
+        }
+
         bool placed = false;
         Placement placement;
 
         for (auto& box : openBoxes) {
-            if (tryPlaceInInstance(box, item, placement)) {
+            if (tryPlaceInInstance(box, item, placement, constraints)) {
                 solution.placements.push_back(placement);
                 placed = true;
                 break;
@@ -143,7 +161,7 @@ PackingSolution PackingSolver::solve(
                 if (boxType.maximumBoxes != -1 && usedCount >= boxType.maximumBoxes) continue;
                 if (boxType.maxWeight > 0 && item.weight > boxType.maxWeight) continue;
 
-                auto rotations = Orientation::allRotations(item.itemDimension);
+                auto rotations = constraints.permittedRotations(item);
                 bool fitsAny = false;
                 for (const Dimension& rot : rotations) {
                     if (rot.width <= boxType.boxDimension.width &&
@@ -165,7 +183,7 @@ PackingSolution PackingSolver::solve(
                 boxTypeCount[boxType.reference] = usedCount + 1;
                 openBoxes.push_back(newBox);
 
-                if (tryPlaceInInstance(openBoxes.back(), item, placement)) {
+                if (tryPlaceInInstance(openBoxes.back(), item, placement, constraints)) {
                     solution.placements.push_back(placement);
                     placed = true;
                 }
@@ -175,6 +193,11 @@ PackingSolution PackingSolver::solve(
 
         if (!placed) {
             solution.unplacedItems.push_back(item.itemCode);
+            solution.violations.push_back({
+                "NO_VALID_PLACEMENT",
+                item.itemCode,
+                "No open or new box could accept this item under the current constraints"
+            });
         }
     }
 
