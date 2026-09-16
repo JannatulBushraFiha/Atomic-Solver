@@ -40,22 +40,22 @@ inline void reportFailure(const std::string& expr, const char* file, int line) {
 
 } // namespace testkit
 
-#define TEST_CASE(name)                                                        \
-    static void name();                                                        \
-    static ::testkit::Registrar registrar_##name(#name, name);                  \
+#define TEST_CASE(name)                                                        
+    static void name();                                                        
+    static ::testkit::Registrar registrar_##name(#name, name);                  
     static void name()
 
-#define CHECK(cond)                                                            \
-    do {                                                                       \
-        if (!(cond)) { ::testkit::reportFailure(#cond, __FILE__, __LINE__); }  \
+#define CHECK(cond)                                                            
+    do {                                                                       
+        if (!(cond)) { ::testkit::reportFailure(#cond, __FILE__, __LINE__); }  
     } while (0)
 
-#define REQUIRE(cond)                                                          \
-    do {                                                                       \
-        if (!(cond)) {                                                         \
-            ::testkit::reportFailure(#cond, __FILE__, __LINE__);               \
-            throw ::testkit::TestFailure{#cond};                               \
-        }                                                                      \
+#define REQUIRE(cond)                                                          
+    do {                                                                       
+        if (!(cond)) {                                                        
+            ::testkit::reportFailure(#cond, __FILE__, __LINE__);               
+            throw ::testkit::TestFailure{#cond};                               
+        }                                                                      
     } while (0)
 
 // =============================================================================
@@ -162,7 +162,7 @@ using namespace fixtures;
 TEST_CASE(Validator_ValidSingleItemSolution_PassesCleanly) {
     Item item = makeItem("ITEM-1", dim(10, 10, 10), 2.0);
     BoxType box = makeBox("BOX-S", dim(20, 20, 20), 50.0, -1, true);
-    Constraints constraints = makeConstraints();
+    Constraints constraints = makeConstraints();python3 run_integration_tests.py 
 
     PackingSolution solution;
     solution.placements.push_back(makePlacement("ITEM-1", "BOX-S", 1, pos(0, 0, 0), item.itemDimension));
