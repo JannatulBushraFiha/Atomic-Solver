@@ -7,6 +7,7 @@
 #include "BoxType.h"
 #include "Item.h"
 #include "PackingSolver.h"
+#include "Validator.h"
 
 using json = nlohmann::json;
 
@@ -32,6 +33,9 @@ Item parseItem(const json& j) {
     item.itemDimension.depth  = j.at("Depth").get<int>();
     item.weight = j.at("Weight").get<double>();
     item.boxGroup = j.value("BoxGroup", std::string(""));
+    item.isFragile = j.value("IsFragile", false);
+    item.isDangerousGoods = j.value("IsDangerousGoods", false);
+    item.dangerousGoodsClass = j.value("DangerousGoodsClass", std::string(""));
     return item;
 }
 
@@ -59,10 +63,12 @@ int main() {
     }
 
     PackingSolver solver;
-auto startTime = std::chrono::high_resolution_clock::now();
-PackingSolution solution = solver.solve(items, boxes);
-auto endTime = std::chrono::high_resolution_clock::now();
-double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
+    auto startTime = std::chrono::high_resolution_clock::now();
+    PackingSolution solution = solver.solve(items, boxes);
+    auto endTime = std::chrono::high_resolution_clock::now();
+    double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
+
+    ValidationResult validation = Validator::validate(solution, items, boxes, solver.constraints);
 
     json output;
     output["placements"] = json::array();
@@ -78,6 +84,15 @@ double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime
 
     output["unplacedItems"] = solution.unplacedItems;
 
+    output["violations"] = json::array();
+    for (const auto& v : solution.violations) {
+        output["violations"].push_back({
+            {"code", v.code},
+            {"itemCode", v.itemCode},
+            {"message", v.message}
+        });
+    }
+
     output["usedBoxes"] = json::array();
     for (const auto& u : solution.usedBoxes) {
         output["usedBoxes"].push_back({
@@ -86,8 +101,20 @@ double elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime
             {"totalWeight", u.totalWeight}
         });
     }
+
+    output["validation"] = json::object();
+    output["validation"]["valid"] = validation.valid;
+    output["validation"]["issues"] = json::array();
+    for (const auto& v : validation.violations) {
+        output["validation"]["issues"].push_back({
+            {"code", v.code},
+            {"itemCode", v.itemCode},
+            {"message", v.message}
+        });
+    }
+
     output["timeMs"] = elapsedMs;
 
-    std::cout << output.dump();
+    std::cout << output.dump(2);
     return 0;
 }
