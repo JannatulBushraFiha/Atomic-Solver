@@ -2,10 +2,14 @@
 
 #include <string>
 #include "Position.h"
-#include "Orientation.h"
+#include "Dimension.h"
 
 struct Placement {
     std::string itemCode;
-    Position position;
-    Orientation orientation;
+
+    std::string boxReference;   // matches BoxType::reference
+    int boxInstance;            // 1st box of this type, 2nd box, etc.
+
+    Position position;          // corner of item inside the box
+    Dimension placedDimension;
 };
