@@ -27,6 +27,10 @@ struct Constraints {
 
     std::vector<std::string> prohibitedDangerousGoodsClasses = {"1"};
 
+    // Item-only checks (dimensions, weight, prohibited goods, per-item limits); ignores box types.
+    bool checkItemLimits(const Item& item, Violation& out) const;
+
+    // checkItemLimits plus "at least one active box type can take this item".
     bool checkItem(const Item& item, const std::vector<BoxType>& boxes, Violation& out) const;
     bool allowsPlacement(const BoxState& box, const Item& item, Violation& out) const;
     std::vector<Dimension> permittedRotations(const Item& item) const;

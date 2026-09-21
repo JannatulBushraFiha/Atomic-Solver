@@ -36,6 +36,7 @@ Item parseItem(const json& j) {
     item.isFragile = j.value("IsFragile", false);
     item.isDangerousGoods = j.value("IsDangerousGoods", false);
     item.dangerousGoodsClass = j.value("DangerousGoodsClass", std::string(""));
+    item.shipInOwnPackaging = j.value("ShipInOwnPackaging", false);
     return item;
 }
 
@@ -83,6 +84,15 @@ int main() {
     }
 
     output["unplacedItems"] = solution.unplacedItems;
+
+    output["ownPackagedItems"] = json::array();
+    for (const auto& o : solution.ownPackagedItems) {
+        output["ownPackagedItems"].push_back({
+            {"itemCode", o.itemCode},
+            {"dimension", {{"width", o.dimension.width}, {"length", o.dimension.length}, {"depth", o.dimension.depth}}},
+            {"weight", o.weight}
+        });
+    }
 
     output["violations"] = json::array();
     for (const auto& v : solution.violations) {

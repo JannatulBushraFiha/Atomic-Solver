@@ -124,7 +124,22 @@ PackingSolution PackingSolver::solve(
         return volume(a.boxDimension) < volume(b.boxDimension);
     });
 
-    std::vector<Item> sortedItems = items;
+    // Own-packaged items skip packing entirely; they only need to pass the item-level limits.
+    std::vector<Item> sortedItems;
+    for (const auto& item : items) {
+        if (!item.shipInOwnPackaging) {
+            sortedItems.push_back(item);
+            continue;
+        }
+        Violation limitViolation;
+        if (!constraints.checkItemLimits(item, limitViolation)) {
+            solution.unplacedItems.push_back(item.itemCode);
+            solution.violations.push_back(limitViolation);
+            continue;
+        }
+        solution.ownPackagedItems.push_back({ item.itemCode, item.itemDimension, item.weight });
+    }
+
     std::sort(sortedItems.begin(), sortedItems.end(), [](const Item& a, const Item& b) {
         long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
         long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
