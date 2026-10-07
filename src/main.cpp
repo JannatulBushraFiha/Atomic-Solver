@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <map>
 
 #include "json.hpp"
 #include "BoxType.h"
@@ -39,6 +40,35 @@ Item parseItem(const json& j) {
     return item;
 }
 
+// One input line can describe several identical units ("Quantity": N).
+// Each unit becomes its own Item with a unique INTERNAL code (BOOK-1, BOOK-2, ...)
+// because the solver and validator need unique codes. The output maps every unit back
+// to the original code (BOOK), so callers see exactly the codes they sent.
+// Quantity defaults to 1.
+// `originalCodes` remembers which input code each unit came from, so the output can
+// show the code exactly as the caller sent it.
+void parseItemWithQuantity(const json& j, std::vector<Item>& out,
+                           std::map<std::string, std::string>& originalCodes) {
+    const int quantity = j.value("Quantity", 1);
+    if (quantity < 1) {
+        throw std::runtime_error("Quantity must be at least 1 for item " +
+                                 j.value("ItemCode", std::string("?")));
+    }
+
+    Item base = parseItem(j);
+    if (quantity == 1) {
+        originalCodes[base.itemCode] = base.itemCode;
+        out.push_back(base);
+        return;
+    }
+    for (int n = 1; n <= quantity; n++) {
+        Item unit = base;
+        unit.itemCode = base.itemCode + "-" + std::to_string(n); // internal unique id only
+        originalCodes[unit.itemCode] = base.itemCode;
+        out.push_back(unit);
+    }
+}
+
 int main() {
     std::stringstream buffer;
     buffer << std::cin.rdbuf();
@@ -53,10 +83,15 @@ int main() {
 
     std::vector<BoxType> boxes;
     std::vector<Item> items;
+    std::map<std::string, std::string> originalCodes;
+    auto outCode = [&](const std::string& internal) {
+        auto it = originalCodes.find(internal);
+        return it != originalCodes.end() ? it->second : internal;
+    };
 
     try {
         for (const auto& b : input.at("boxTypes")) boxes.push_back(parseBoxType(b));
-        for (const auto& i : input.at("items"))    items.push_back(parseItem(i));
+        for (const auto& i : input.at("items"))    parseItemWithQuantity(i, items, originalCodes);
     } catch (const std::exception& e) {
         std::cout << json{{"error", std::string("Bad input: ") + e.what()}}.dump();
         return 1;
@@ -74,7 +109,7 @@ int main() {
     output["placements"] = json::array();
     for (const auto& p : solution.placements) {
         output["placements"].push_back({
-            {"itemCode", p.itemCode},
+            {"itemCode", outCode(p.itemCode)},
             {"boxReference", p.boxReference},
             {"boxInstance", p.boxInstance},
             {"position", {{"x", p.position.x}, {"y", p.position.y}, {"z", p.position.z}}},
@@ -82,13 +117,14 @@ int main() {
         });
     }
 
-    output["unplacedItems"] = solution.unplacedItems;
+    output["unplacedItems"] = json::array();
+    for (const auto& code : solution.unplacedItems) output["unplacedItems"].push_back(outCode(code));
 
     output["violations"] = json::array();
     for (const auto& v : solution.violations) {
         output["violations"].push_back({
             {"code", v.code},
-            {"itemCode", v.itemCode},
+            {"itemCode", outCode(v.itemCode)},
             {"message", v.message}
         });
     }
@@ -108,7 +144,7 @@ int main() {
     for (const auto& v : validation.violations) {
         output["validation"]["issues"].push_back({
             {"code", v.code},
-            {"itemCode", v.itemCode},
+            {"itemCode", outCode(v.itemCode)},
             {"message", v.message}
         });
     }
