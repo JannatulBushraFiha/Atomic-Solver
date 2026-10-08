@@ -1,4 +1,191 @@
 #include "PackingSolver.h"
+#include "Orientation.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <numeric>
+
+namespace {
+
+// A fragile item may only carry items weighing at most this fraction of its own weight.
+// (e.g. 0.5 -> a 10 kg fragile item can support up to 5 kg on top.)
+const double FRAGILE_MAX_LOAD_RATIO = 0.5;
+
+// Spare room left at the top of every box so the lid can close, as a FRACTION of the box
+// depth, so it works in any unit (mm, cm, ...). 0.02 = keep the top 2% free (always at
+// least 1 unit). Items are never stacked higher than the box depth minus this gap.
+// Set to 0.0 for a perfect fit.
+const double BOX_TOP_HEADROOM_RATIO = 0.0;
+
+struct FreeSpace {
+    int x, y, z;
+    int width, length, depth;
+    double supportWeight = 1e18;   // weight of the item underneath (box floor = unlimited)
+    bool supportIsFragile = false; // is the item underneath fragile?
+};
+
+struct BoxInstance {
+    std::string reference;
+    int instanceNumber;
+    double maxWeight;
+    double currentWeight = 0.0;
+    std::string group; // empty = not yet assigned to a group
+    bool hasDangerousGoods = false;
+    std::string dangerousGoodsClass;
+    bool hasFragile = false;
+    std::vector<FreeSpace> freeSpaces;
+};
+
+// Depth that items may actually use: box depth minus the top headroom (rounded up to a
+// whole unit so any ratio above 0 keeps at least 1 unit free).
+int usableDepth(int boxDepth) {
+    if (BOX_TOP_HEADROOM_RATIO <= 0.0) return boxDepth;
+    int headroom = static_cast<int>(std::ceil(boxDepth * BOX_TOP_HEADROOM_RATIO - 1e-9));
+    return std::max(0, boxDepth - headroom);
+}
+
+long long volume(const Dimension& d) {
+    return static_cast<long long>(d.width) * d.length * d.depth;
+}
+
+long long spaceVolume(const FreeSpace& s) {
+    return static_cast<long long>(s.width) * s.length * s.depth;
+}
+
+bool fitsInSpace(const Dimension& dim, const FreeSpace& space) {
+    return dim.width <= space.width &&
+           dim.length <= space.length &&
+           dim.depth <= space.depth;
+}
+
+void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dimension& placedDim, double placedWeight, bool placedFragile) {
+    FreeSpace used = spaces[usedIndex];
+    spaces.erase(spaces.begin() + usedIndex);
+
+    if (used.width - placedDim.width > 0) {
+        spaces.push_back({
+            used.x + placedDim.width, used.y, used.z,
+            used.width - placedDim.width, used.length, used.depth,
+            used.supportWeight, used.supportIsFragile
+        });
+    }
+    if (used.length - placedDim.length > 0) {
+        spaces.push_back({
+            used.x, used.y + placedDim.length, used.z,
+            placedDim.width, used.length - placedDim.length, used.depth,
+            used.supportWeight, used.supportIsFragile
+        });
+    }
+    if (used.depth - placedDim.depth > 0) {
+        spaces.push_back({
+            used.x, used.y, used.z + placedDim.depth,
+            placedDim.width, placedDim.length, used.depth - placedDim.depth,
+            placedWeight, placedFragile
+        });
+    }
+}
+
+BoxState toBoxState(const BoxInstance& box) {
+    BoxState state;
+    state.maxWeight = box.maxWeight;
+    state.currentWeight = box.currentWeight;
+    state.group = box.group;
+    state.hasDangerousGoods = box.hasDangerousGoods;
+    state.dangerousGoodsClass = box.dangerousGoodsClass;
+    state.hasFragile = box.hasFragile;
+    return state;
+}
+
+// The best spot found for an item inside one box.
+struct FitCandidate {
+    bool found = false;
+    size_t spaceIdx = 0;
+    Dimension rotation{};
+    long long waste = std::numeric_limits<long long>::max();
+    int z = 0, y = 0, x = 0;
+};
+
+// Is candidate `a` a better spot than `b`?
+// 1) FLOOR FIRST: a spot on the box floor (z == 0) beats any stacked spot.
+// 2) least wasted volume (best fit).
+// 3) lie flat: lower item height (bigger footprint = steadier).
+// 4) tidy corner: lowest z, then y, then x.
+bool isBetterFit(const FitCandidate& a, const FitCandidate& b) {
+    if (!a.found) return false;
+    if (!b.found) return true;
+    bool aFloor = (a.z == 0), bFloor = (b.z == 0);
+    if (aFloor != bFloor) return aFloor;
+    if (a.waste != b.waste) return a.waste < b.waste;
+    if (a.rotation.depth != b.rotation.depth) return a.rotation.depth < b.rotation.depth;
+    if (a.z != b.z) return a.z < b.z;
+    if (a.y != b.y) return a.y < b.y;
+    return a.x < b.x;
+}
+
+// BEST FIT inside one box: look at every free space and every allowed rotation,
+// keep the one that leaves the least wasted volume. If two spots waste the same,
+// take the lowest corner (z, then y, then x) so the packing stays tidy.
+FitCandidate evaluateBestFit(const BoxInstance& box, const Item& item, const Constraints& constraints) {
+    FitCandidate best;
+
+    Violation ignored;
+    if (!constraints.allowsPlacement(toBoxState(box), item, ignored)) return best;
+
+    auto rotations = constraints.permittedRotations(item);
+
+    for (size_t spaceIdx = 0; spaceIdx < box.freeSpaces.size(); spaceIdx++) {
+        const FreeSpace& space = box.freeSpaces[spaceIdx];
+        for (const Dimension& rot : rotations) {
+            if (!fitsInSpace(rot, space)) continue;
+
+            // STACKING RULE 1: never put a heavier item on top of a lighter one.
+            if (item.weight > space.supportWeight) continue;
+            // STACKING RULE 2: on top of a fragile item, only a much lighter load is allowed.
+            if (space.supportIsFragile && item.weight > FRAGILE_MAX_LOAD_RATIO * space.supportWeight) continue;
+
+            FitCandidate cand;
+            cand.found = true;
+            cand.waste = spaceVolume(space) - volume(rot);
+            cand.spaceIdx = spaceIdx;
+            cand.rotation = rot;
+            cand.z = space.z;
+            cand.y = space.y;
+            cand.x = space.x;
+            if (isBetterFit(cand, best)) best = cand;
+        }
+    }
+    return best;
+}
+
+// Actually place the item using a candidate found by evaluateBestFit.
+void commitFit(BoxInstance& box, const Item& item, const FitCandidate& fit, Placement& outPlacement) {
+    FreeSpace chosen = box.freeSpaces[fit.spaceIdx];
+
+    outPlacement.itemCode = item.itemCode;
+    outPlacement.boxReference = box.reference;
+    outPlacement.boxInstance = box.instanceNumber;
+    outPlacement.position = { chosen.x, chosen.y, chosen.z };
+    outPlacement.placedDimension = fit.rotation;
+
+    splitFreeSpace(box.freeSpaces, fit.spaceIdx, fit.rotation, item.weight, item.isFragile);
+    box.currentWeight += item.weight;
+    if (!item.boxGroup.empty()) box.group = item.boxGroup;
+    if (item.isDangerousGoods) {
+        box.hasDangerousGoods = true;
+        box.dangerousGoodsClass = item.dangerousGoodsClass;
+    }
+    if (item.isFragile) box.hasFragile = true;
+}
+
+// A finished packing run plus the live state of its boxes (free spaces, weights).
+struct PlanState {
+    PackingSolution solution;
+    std::vector<BoxInstance> boxes;
+};
+
+} // namespace
 
 // pretty basic approach for now, just trying to get something working
 // sort items biggest first so the big stuff gets priority, then put
@@ -206,6 +393,7 @@ PackingSolution PackingSolver::solve(
     const std::vector<Item>& allItems,
     const std::vector<BoxType>& boxes
 ) {
+<<<<<<< HEAD
     // Items that ship in their own packaging skip packing entirely: they only have to pass
     // the per-item limits, and are then reported as their own parcels.
     PackingSolution shipping;
@@ -246,6 +434,25 @@ PackingSolution PackingSolver::solve(
         return volume(a.itemDimension) > volume(b.itemDimension);
     });
 
+=======
+    std::vector<BoxType> activeBoxes;
+    for (const auto& b : boxes) {
+        if (b.active) activeBoxes.push_back(b);
+    }
+    std::sort(activeBoxes.begin(), activeBoxes.end(), [](const BoxType& a, const BoxType& b) {
+        return volume(a.boxDimension) < volume(b.boxDimension);
+    });
+
+    // Largest footprint first, then largest volume.
+    std::vector<Item> sortedItems = items;
+    std::sort(sortedItems.begin(), sortedItems.end(), [](const Item& a, const Item& b) {
+        long long areaA = static_cast<long long>(a.itemDimension.width) * a.itemDimension.length;
+        long long areaB = static_cast<long long>(b.itemDimension.width) * b.itemDimension.length;
+        if (areaA != areaB) return areaA > areaB;
+        return volume(a.itemDimension) > volume(b.itemDimension);
+    });
+
+>>>>>>> origin/jannatul-final-branch
     // One full packing run. `preferredRef` is the box type we try to open first
     // whenever a new box is needed (empty = just take the smallest that fits).
     auto runPlan = [&](const std::string& preferredRef, const std::vector<Item>& order) {
@@ -265,6 +472,7 @@ PackingSolution PackingSolver::solve(
             if (!constraints.checkItem(item, boxes, preCheckViolation)) {
                 solution.unplacedItems.push_back(item.itemCode);
                 solution.violations.push_back(preCheckViolation);
+<<<<<<< HEAD
 >>>>>>> Stashed changes
                 continue;
             }
@@ -285,6 +493,82 @@ PackingSolution PackingSolver::solve(
     return result;
 }
 =======
+=======
+                continue;
+            }
+
+            bool placed = false;
+
+            // BEST FIT across ALL open boxes: least wasted volume wins.
+            int bestBoxIdx = -1;
+            FitCandidate bestFit;
+            for (size_t i = 0; i < openBoxes.size(); i++) {
+                FitCandidate candidate = evaluateBestFit(openBoxes[i], item, constraints);
+                if (candidate.found && (!bestFit.found || candidate.waste < bestFit.waste)) {
+                    bestFit = candidate;
+                    bestBoxIdx = static_cast<int>(i);
+                }
+            }
+
+            if (bestBoxIdx != -1) {
+                Placement placement;
+                commitFit(openBoxes[bestBoxIdx], item, bestFit, placement);
+                solution.placements.push_back(placement);
+                placed = true;
+            }
+
+            // Nothing open can take it: open a new box (preferred type first).
+            if (!placed) {
+                for (const auto& boxType : openOrder) {
+                    int usedCount = boxTypeCount[boxType.reference];
+                    if (boxType.maximumBoxes != -1 && usedCount >= boxType.maximumBoxes) continue;
+                    if (boxType.maxWeight > 0 && item.weight > boxType.maxWeight) continue;
+
+                    auto rotations = constraints.permittedRotations(item);
+                    bool fitsAny = false;
+                    for (const Dimension& rot : rotations) {
+                        if (rot.width <= boxType.boxDimension.width &&
+                            rot.length <= boxType.boxDimension.length &&
+                            rot.depth <= usableDepth(boxType.boxDimension.depth)) {
+                            fitsAny = true;
+                            break;
+                        }
+                    }
+                    if (!fitsAny) continue;
+
+                    BoxInstance newBox;
+                    newBox.reference = boxType.reference;
+                    newBox.instanceNumber = usedCount + 1;
+                    newBox.maxWeight = boxType.maxWeight;
+                    newBox.freeSpaces.push_back({0, 0, 0, boxType.boxDimension.width,
+                                                  boxType.boxDimension.length,
+                                                  usableDepth(boxType.boxDimension.depth)});
+
+                    boxTypeCount[boxType.reference] = usedCount + 1;
+                    openBoxes.push_back(newBox);
+
+                    FitCandidate fit = evaluateBestFit(openBoxes.back(), item, constraints);
+                    if (fit.found) {
+                        Placement placement;
+                        commitFit(openBoxes.back(), item, fit, placement);
+                        solution.placements.push_back(placement);
+                        placed = true;
+                    }
+                    break;
+                }
+            }
+
+            if (!placed) {
+                solution.unplacedItems.push_back(item.itemCode);
+                solution.violations.push_back({
+                    "NO_VALID_PLACEMENT",
+                    item.itemCode,
+                    "No open or new box could accept this item under the current constraints"
+                });
+            }
+        }
+
+>>>>>>> origin/jannatul-final-branch
         for (const auto& box : openBoxes) {
             solution.usedBoxes.push_back({ box.reference, box.instanceNumber, box.currentWeight });
         }
@@ -424,6 +708,7 @@ PackingSolution PackingSolver::solve(
         const int iterations = std::max<int>(100, std::min<int>(1500, 120000 / static_cast<int>(boxes.size() + 1)));
         double curScore = score(boxes, plc);
 
+<<<<<<< HEAD
         // Fewest boxes that could ever hold these items (by weight and by volume). Once we
         // are there, fewer boxes is impossible and the search can stop early.
         size_t lowerBound = 1;
@@ -455,6 +740,9 @@ PackingSolution PackingSolver::solve(
 
         for (int iter = 0; iter < iterations && boxes.size() > 1; iter++) {
             if (boxes.size() <= lowerBound) break;
+=======
+        for (int iter = 0; iter < iterations && boxes.size() > 1; iter++) {
+>>>>>>> origin/jannatul-final-branch
             // pick 1-3 victims, biased towards weak boxes
             int k = 1 + static_cast<int>(next() % 3);
             if (k > static_cast<int>(boxes.size())) k = static_cast<int>(boxes.size());
@@ -728,6 +1016,7 @@ PackingSolution PackingSolver::solve(
             best = std::move(cand);
         }
     }
+<<<<<<< HEAD
 
     best.ownPackagedItems = std::move(shipping.ownPackagedItems);
     best.unplacedItems.insert(best.unplacedItems.end(), shipping.unplacedItems.begin(), shipping.unplacedItems.end());
@@ -735,3 +1024,7 @@ PackingSolution PackingSolver::solve(
     return best;
 }
 >>>>>>> Stashed changes
+=======
+    return best;
+}
+>>>>>>> origin/jannatul-final-branch
