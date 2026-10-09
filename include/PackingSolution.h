@@ -1,5 +1,4 @@
-#ifndef PACKINGSOLUTION_H
-#define PACKINGSOLUTION_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -12,16 +11,17 @@ struct UsedBox {
     double totalWeight = 0.0;
 };
 
-class PackingSolution {
-public:
-    std::vector<Placement> solution;
-    std::vector<std::string> unplacedItems;
-<<<<<<< HEAD
+// An item shipped as-is in its own packaging. It occupies no carton and is its own parcel.
+struct OwnPackagedItem {
+    std::string itemCode;
+    Dimension dimension;
+    double weight = 0.0;
 };
 
-#endif
-=======
+struct PackingSolution {
+    std::vector<Placement> placements;
+    std::vector<std::string> unplacedItems;
     std::vector<UsedBox> usedBoxes;
+    std::vector<OwnPackagedItem> ownPackagedItems;
     std::vector<Violation> violations;
 };
->>>>>>> origin/jannatul-final-branch

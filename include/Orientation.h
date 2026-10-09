@@ -1,15 +1,5 @@
-#ifndef ORIENTATION_H
-#define ORIENTATION_H
+#pragma once
 
-<<<<<<< HEAD
-// not doing orientation for MVP, out of scope for now
-enum class Orientation {
-    NONE,
-    UPRIGHT
-};
-
-#endif
-=======
 #include <array>
 #include "Dimension.h"
 
@@ -17,4 +7,3 @@ enum class Orientation {
 namespace Orientation {
     std::array<Dimension, 6> allRotations(const Dimension& dim);
 }
->>>>>>> origin/jannatul-final-branch

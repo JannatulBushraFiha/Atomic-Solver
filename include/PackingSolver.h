@@ -1,18 +1,13 @@
-#ifndef PACKINGSOLVER_H
-#define PACKINGSOLVER_H
+#pragma once
 
-#include "Problem.h"
+#include <vector>
+#include "Item.h"
+#include "BoxType.h"
 #include "PackingSolution.h"
 #include "Constraints.h"
 
 class PackingSolver {
 public:
-<<<<<<< HEAD
-    PackingSolution solve(const Problem& problem);
-};
-
-#endif
-=======
     Constraints constraints;
 
     PackingSolution solve(
@@ -20,4 +15,3 @@ public:
         const std::vector<BoxType>& boxes
     );
 };
->>>>>>> origin/jannatul-final-branch

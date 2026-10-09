@@ -44,7 +44,7 @@ std::string weightText(double weight) {
 
 } // namespace
 
-bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes, Violation& out) const {
+bool Constraints::checkItemLimits(const Item& item, Violation& out) const {
     out.itemCode = item.itemCode;
 
     const Dimension& dim = item.itemDimension;
@@ -97,6 +97,14 @@ bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes,
             return false;
         }
     }
+
+    return true;
+}
+
+bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes, Violation& out) const {
+    if (!checkItemLimits(item, out)) return false;
+
+    const Dimension& dim = item.itemDimension;
 
     bool anyBoxActive = false;
     bool anyBoxFits = false;

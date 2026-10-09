@@ -100,6 +100,12 @@ ValidationResult Validator::validate(
         }
         const Item& item = *itemEntry->second;
 
+        if (item.shipInOwnPackaging) {
+            add(result, "FLAGGED_ITEM_PACKED", item.itemCode,
+                "Marked to ship in its own packaging but was packed into box " +
+                boxLabel(placement.boxReference, placement.boxInstance));
+        }
+
         if (!isPermittedRotation(placement.placedDimension, item, constraints)) {
             add(result, "INVALID_ROTATION", item.itemCode,
                 "Placed as " + dimensionText(placement.placedDimension) +
@@ -300,6 +306,33 @@ ValidationResult Validator::validate(
         }
     }
 
+    std::set<std::string> ownPackaged;
+    for (const auto& own : solution.ownPackagedItems) {
+        if (!ownPackaged.insert(own.itemCode).second) {
+            add(result, "DUPLICATE_OWN_PACKAGED_ITEM", own.itemCode,
+                "Listed as shipped in own packaging more than once");
+        }
+        auto itemEntry = itemsByCode.find(own.itemCode);
+        if (itemEntry == itemsByCode.end()) {
+            add(result, "UNKNOWN_ITEM", own.itemCode, "Own-packaged item is not in the input");
+            continue;
+        }
+        const Item& item = *itemEntry->second;
+        if (!item.shipInOwnPackaging) {
+            add(result, "OWN_PACKAGING_NOT_FLAGGED", own.itemCode,
+                "Shipped in own packaging but the input did not ask for it");
+        }
+        const Dimension& in = item.itemDimension;
+        if (own.dimension.width != in.width ||
+            own.dimension.length != in.length ||
+            own.dimension.depth != in.depth ||
+            std::fabs(own.weight - item.weight) > WEIGHT_TOLERANCE) {
+            add(result, "OWN_PACKAGING_MISMATCH", own.itemCode,
+                "Reported as " + dimensionText(own.dimension) + " weighing " + weightText(own.weight) +
+                " but the input is " + dimensionText(in) + " weighing " + weightText(item.weight));
+        }
+    }
+
     std::set<std::string> explained;
     for (const auto& violation : solution.violations) {
         explained.insert(violation.itemCode);
@@ -308,6 +341,7 @@ ValidationResult Validator::validate(
     for (const auto& item : items) {
         const int placedTimes = placementCount[item.itemCode];
         const bool isUnplaced = unplaced.count(item.itemCode) > 0;
+        const bool isOwnPackaged = ownPackaged.count(item.itemCode) > 0;
 
         if (placedTimes > 1) {
             add(result, "ITEM_PLACED_TWICE", item.itemCode,
@@ -317,8 +351,17 @@ ValidationResult Validator::validate(
             add(result, "ITEM_PLACED_AND_UNPLACED", item.itemCode,
                 "Listed as both placed and unplaced");
         }
-        if (placedTimes == 0 && !isUnplaced) {
-            add(result, "ITEM_MISSING", item.itemCode, "Does not appear as placed or unplaced");
+        if (placedTimes > 0 && isOwnPackaged) {
+            add(result, "ITEM_PLACED_AND_OWN_PACKAGED", item.itemCode,
+                "Listed as both placed and shipped in own packaging");
+        }
+        if (isUnplaced && isOwnPackaged) {
+            add(result, "ITEM_UNPLACED_AND_OWN_PACKAGED", item.itemCode,
+                "Listed as both unplaced and shipped in own packaging");
+        }
+        if (placedTimes == 0 && !isUnplaced && !isOwnPackaged) {
+            add(result, "ITEM_MISSING", item.itemCode,
+                "Does not appear as placed, unplaced, or shipped in own packaging");
         }
         if (isUnplaced && explained.count(item.itemCode) == 0) {
             add(result, "MISSING_REASON", item.itemCode, "Unplaced with nothing explaining why");

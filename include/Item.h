@@ -1,34 +1,20 @@
-#ifndef ITEM_H
-#define ITEM_H
+#pragma once
 
 #include <string>
-<<<<<<< HEAD
-#include "Dimensions.h"
-=======
 #include "Dimension.h"
 
->>>>>>> origin/jannatul-final-branch
 
-class Item {
-public:
+struct Item {
     std::string itemCode;
     std::string itemReference;
-<<<<<<< HEAD
-    Dimensions d;
-    double weight;
-    std::string boxGroup;
-
-    Item(std::string code, std::string ref, Dimensions dim, double w, std::string group = "");
-};
-
-#endif
-=======
     Dimension itemDimension;
     std::string boxGroup;
     bool isFragile = false;
     bool isDangerousGoods = false;
     std::string dangerousGoodsClass;
-    
+
+    // Ships as-is in its own packaging (never put in a carton); dimensions/weight are then the outer packaging.
+    bool shipInOwnPackaging = false;
+
     double weight =0.0;
 };
->>>>>>> origin/jannatul-final-branch
