@@ -783,6 +783,311 @@ TEST_CASE(Integration_ZeroWeightItems_StillValid) {
     CHECK(result.valid);
 }
 
+TEST_CASE(Integration_ZeroWeightDifferentDangerousGoodsClasses_SolverOutputPassesValidator) {
+    Item itemA = makeItem("DG-2", dim(2, 2, 2), 0.0);
+    itemA.isDangerousGoods = true;
+    itemA.dangerousGoodsClass = "2";
+
+    Item itemB = makeItem("DG-3", dim(2, 2, 2), 0.0);
+    itemB.isDangerousGoods = true;
+    itemB.dangerousGoodsClass = "3";
+
+    std::vector<Item> items = {itemA, itemB};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(items, boxes, constraints, &solution);
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+}
+
+
+TEST_CASE(Integration_ZeroWeightFragileAndOrdinaryItems_SolverOutputPassesValidator) {
+    // The ordinary item is larger, so it should be processed first.
+    Item ordinary = makeItem("ORD-ZERO", dim(3, 3, 1), 0.0);
+
+    Item fragile = makeItem("FRAG-ZERO", dim(2, 2, 2), 0.0);
+    fragile.isFragile = true;
+
+    std::vector<Item> items = {ordinary, fragile};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+}
+
+
+TEST_CASE(Integration_ItemExactlyMatchesBoxDimensions_SolverOutputPassesValidator) {
+    std::vector<Item> items = {
+        makeItem("EXACT-FIT", dim(10, 8, 6), 5.0),
+    };
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 8, 6), 5.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 1);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+TEST_CASE(Integration_ItemExceedsBoxDimensionByOne_BecomesUnplaced) {
+    std::vector<Item> items = {
+        makeItem("TOO-LARGE", dim(11, 8, 6), 5.0),
+    };
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 8, 6), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.empty());
+    CHECK(solution.unplacedItems.size() == 1);
+}
+
+
+TEST_CASE(Integration_ItemsExactlyReachBoxWeightLimit_SolverOutputPassesValidator) {
+    std::vector<Item> items = {
+        makeItem("WEIGHT-A", dim(2, 2, 2), 2.5),
+        makeItem("WEIGHT-B", dim(2, 2, 2), 2.5),
+    };
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 5.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+TEST_CASE(Integration_ZeroMaximumBoxes_ItemBecomesUnplaced) {
+    std::vector<Item> items = {
+        makeItem("NO-BOX-AVAILABLE", dim(2, 2, 2), 1.0),
+    };
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, 0),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.empty());
+    CHECK(solution.unplacedItems.size() == 1);
+}
+
+
+TEST_CASE(Integration_DifferentDangerousGoodsClasses_PositiveWeight_SolverOutputPassesValidator) {
+    Item itemA = makeItem("DG-POS-2", dim(2, 2, 2), 1.0);
+    itemA.isDangerousGoods = true;
+    itemA.dangerousGoodsClass = "2";
+
+    Item itemB = makeItem("DG-POS-3", dim(2, 2, 2), 1.0);
+    itemB.isDangerousGoods = true;
+    itemB.dangerousGoodsClass = "3";
+
+    std::vector<Item> items = {itemA, itemB};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+}
+
+
+TEST_CASE(Integration_SameDangerousGoodsClass_ZeroWeight_SolverOutputPassesValidator) {
+    Item itemA = makeItem("DG-SAME-A", dim(2, 2, 2), 0.0);
+    itemA.isDangerousGoods = true;
+    itemA.dangerousGoodsClass = "3";
+
+    Item itemB = makeItem("DG-SAME-B", dim(2, 2, 2), 0.0);
+    itemB.isDangerousGoods = true;
+    itemB.dangerousGoodsClass = "3";
+
+    std::vector<Item> items = {itemA, itemB};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+//SECTION 4 - CONSTRAINTS TESTING --> directly tests constraints without validator
+
+TEST_CASE(Constraints_ZeroDimension_IsRejected) {
+    Constraints constraints = makeConstraints();
+    Item item = makeItem("C-01", dim(0, 10, 10), 1.0);
+    Violation out;
+
+    CHECK(!constraints.checkItem(item, {makeBox("BOX", dim(20, 20, 20), 50.0)}, out));
+    CHECK(out.code == "INVALID_DIMENSIONS");
+}
+
+TEST_CASE(Constraints_NegativeWeight_IsRejected) {
+    Constraints constraints = makeConstraints();
+    Item item = makeItem("C-02", dim(1, 1, 1), -1.0);
+    Violation out;
+
+    CHECK(!constraints.checkItem(item, {makeBox("BOX", dim(20, 20, 20), 50.0)}, out));
+    CHECK(out.code == "INVALID_WEIGHT");
+}
+
+TEST_CASE(Constraints_WeightExactlyAtLimit_IsAccepted) {
+    Constraints constraints = makeConstraints();
+    constraints.maxItemWeight = 5.0;
+    Item item = makeItem("C-03", dim(2, 2, 2), 5.0);
+    Violation out;
+
+    CHECK(constraints.checkItem(item, {makeBox("BOX", dim(20, 20, 20), 10.0)}, out));
+}
+
+TEST_CASE(Constraints_WeightAboveLimit_IsRejected) {
+    Constraints constraints = makeConstraints();
+    constraints.maxItemWeight = 5.0;
+    Item item = makeItem("C-04", dim(2, 2, 2), 5.01);
+    Violation out;
+
+    CHECK(!constraints.checkItem(item, {makeBox("BOX", dim(20, 20, 20), 10.0)}, out));
+    CHECK(out.code == "ITEM_TOO_HEAVY");
+}
+
+TEST_CASE(Constraints_ProhibitedDangerousGoodsClass_IsRejected) {
+    Constraints constraints = makeConstraints();
+    Item item = makeItem("C-05", dim(2, 2, 2), 1.0);
+    item.isDangerousGoods = true;
+    item.dangerousGoodsClass = "1";
+    Violation out;
+
+    CHECK(!constraints.checkItem(item, {makeBox("BOX", dim(20, 20, 20), 50.0)}, out));
+    CHECK(out.code == "PROHIBITED_GOODS");
+}
+
+TEST_CASE(Constraints_RotationDisabled_RejectsRotatedOnlyFit) {
+    Constraints constraints = makeConstraints();
+    constraints.allowRotation = false;
+
+    Item item = makeItem("C-06", dim(2, 3, 4), 1.0);
+    BoxType box = makeBox("BOX", dim(3, 2, 4), 50.0);
+    Violation out;
+
+    CHECK(!constraints.checkItem(item, {box}, out));
+    CHECK(out.code == "NO_BOX_FITS");
+}
+
+TEST_CASE(Constraints_RotationEnabled_AllowsRotatedFit) {
+    Constraints constraints = makeConstraints();
+    constraints.allowRotation = true;
+
+    Item item = makeItem("C-07", dim(2, 3, 4), 1.0);
+    BoxType box = makeBox("BOX", dim(3, 2, 4), 50.0);
+    Violation out;
+
+    CHECK(constraints.checkItem(item, {box}, out));
+}
+
+TEST_CASE(Constraints_DifferentDangerousGoodsClasses) {
+    Constraints constraints = makeConstraints();
+    BoxState box;
+    box.currentWeight = 1.0;
+    box.hasDangerousGoods = true;
+    box.dangerousGoodsClass = "2";
+
+    Item item = makeItem("C-08", dim(1, 1, 1), 0.0);
+    item.isDangerousGoods = true;
+    item.dangerousGoodsClass = "3";
+
+    Violation out;
+    CHECK(!constraints.allowsPlacement(box, item, out));
+    CHECK(out.code == "DANGEROUS_GOODS_MUST_BE_SEPARATE");
+}
+
+TEST_CASE(Constraints_ZeroWeightDangerousItem) {
+    Constraints constraints = makeConstraints();
+    BoxState box;
+    box.currentWeight = 0.0;
+    box.hasDangerousGoods = true;
+    box.dangerousGoodsClass = "3";
+
+    Item item = makeItem("C-08", dim(1, 1, 1), 0.0);
+    item.isDangerousGoods = true;
+    item.dangerousGoodsClass = "3";
+
+    Violation out;
+    CHECK(constraints.allowsPlacement(box, item, out));
+}
+
+TEST_CASE(Constraints_ZeroWeightDangerousItemWrongClass) {
+    Constraints constraints = makeConstraints();
+    BoxState box;
+    box.currentWeight = 0.0;
+    box.hasDangerousGoods = true;
+    box.dangerousGoodsClass = "2";
+
+    Item item = makeItem("C-08", dim(1, 1, 1), 0.0);
+    item.isDangerousGoods = true;
+    item.dangerousGoodsClass = "3";
+
+    Violation out;
+    CHECK(!constraints.allowsPlacement(box, item, out));
+    CHECK(out.code == "DANGEROUS_GOODS_MUST_BE_SEPARATE");
+}
+
+
 // Runner
 int main() {
     int passed = 0;
@@ -818,3 +1123,4 @@ int main() {
 
     return failed == 0 ? 0 : 1;
 }
+
