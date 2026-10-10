@@ -8,9 +8,7 @@
 #include <string>
 #include <vector>
 
-// =============================================================================
 // Minimal test harness (no external dependency)
-// =============================================================================
 namespace testkit {
 
 struct TestFailure {
@@ -58,13 +56,7 @@ inline void reportFailure(const std::string& expr, const char* file, int line) {
         } \
     } while (0)
 
-<<<<<<< Updated upstream
-// =============================================================================
-// Fixture builders — ADJUST ME if your real field/constructor names differ
-// =============================================================================
-=======
 // Fixture builders
->>>>>>> Stashed changes
 namespace fixtures {
 
 Dimension dim(int width, int length, int depth) {
@@ -114,22 +106,13 @@ Placement makePlacement(std::string itemCode, std::string boxReference, int boxI
     return p;
 }
 
-<<<<<<< Updated upstream
-// TODO(constraints): this is the one piece I genuinely can't infer from the
-// two .cpp files alone. Wire up whatever your real Constraints setup needs
-// (e.g. rotation rules, per-item checkItem rejection rules). For now this
-// just default-constructs one and sets the single field we know about.
-=======
 // this just default-constructs one and sets the single field we know about.
->>>>>>> Stashed changes
 Constraints makeConstraints(bool enforceBoxGroups = false) {
     Constraints c;
     c.enforceBoxGroups = enforceBoxGroups;
     return c;
 }
 
-<<<<<<< Updated upstream
-=======
 // PackingSolver::solve is a member function (constraints live on the instance,
 // not passed as an argument) — this wraps it so call sites below can pass
 // constraints positionally like the rest of the fixtures in this file.
@@ -140,7 +123,6 @@ PackingSolution solverSolve(const std::vector<Item>& items, const std::vector<Bo
     return solver.solve(items, boxes);
 }
 
->>>>>>> Stashed changes
 bool hasViolation(const ValidationResult& r, const std::string& code) {
     for (const auto& v : r.violations) {
         if (v.code == code) return true;
@@ -176,13 +158,7 @@ void dump(const ValidationResult& r) {
 
 using namespace fixtures;
 
-<<<<<<< Updated upstream
-// =============================================================================
 // SECTION 1 — Validator unit tests (hand-built solutions, solver not involved)
-// =============================================================================
-=======
-// SECTION 1 — Validator unit tests (hand-built solutions, solver not involved)
->>>>>>> Stashed changes
 
 TEST_CASE(Validator_ValidSingleItemSolution_PassesCleanly) {
     Item item = makeItem("ITEM-1", dim(10, 10, 10), 2.0);
@@ -534,13 +510,7 @@ TEST_CASE(Validator_UnplacedItemMissingReason) {
     CHECK(hasViolation(result, "MISSING_REASON", "ITEM-1"));
 }
 
-<<<<<<< Updated upstream
-// =============================================================================
 // SECTION 2 — PackingSolver unit tests (solver only, output not yet validated)
-// =============================================================================
-=======
-// SECTION 2 — PackingSolver unit tests (solver only, output not yet validated)
->>>>>>> Stashed changes
 
 TEST_CASE(Solver_SingleItemFitsInSmallestSufficientBox) {
     Item item = makeItem("ITEM-1", dim(5, 5, 5), 1.0);
@@ -548,11 +518,7 @@ TEST_CASE(Solver_SingleItemFitsInSmallestSufficientBox) {
     BoxType large = makeBox("BOX-L", dim(100, 100, 100), 50.0);
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({item}, {small, large}, constraints);
-=======
     PackingSolution solution = solverSolve({item}, {small, large}, constraints);
->>>>>>> Stashed changes
 
     REQUIRE(solution.placements.size() == 1);
     CHECK(solution.placements[0].itemCode == "ITEM-1");
@@ -566,11 +532,7 @@ TEST_CASE(Solver_MultipleSmallItemsShareOneBoxWhenTheyFit) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, -1); // room for both
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
-=======
     PackingSolution solution = solverSolve({a, b}, {box}, constraints);
->>>>>>> Stashed changes
 
     CHECK(solution.unplacedItems.empty());
     REQUIRE(solution.placements.size() == 2);
@@ -586,11 +548,7 @@ TEST_CASE(Solver_OpensSecondBoxInstanceWhenFirstIsFull) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, -1);
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
-=======
     PackingSolution solution = solverSolve({a, b}, {box}, constraints);
->>>>>>> Stashed changes
 
     CHECK(solution.unplacedItems.empty());
     REQUIRE(solution.usedBoxes.size() == 2);
@@ -602,11 +560,7 @@ TEST_CASE(Solver_RespectsBoxWeightLimit) {
     BoxType box = makeBox("BOX-S", dim(50, 50, 50), /*maxWeight=*/10.0, -1); // both fit spatially, not by weight
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
-=======
     PackingSolution solution = solverSolve({a, b}, {box}, constraints);
->>>>>>> Stashed changes
 
     CHECK(solution.unplacedItems.empty());
     for (const auto& used : solution.usedBoxes) {
@@ -621,11 +575,7 @@ TEST_CASE(Solver_RespectsMaximumBoxesLimit_ExtraItemBecomesUnplaced) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, /*maximumBoxes=*/1);
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
-=======
     PackingSolution solution = solverSolve({a, b}, {box}, constraints);
->>>>>>> Stashed changes
 
     CHECK(solution.placements.size() == 1);
     REQUIRE(solution.unplacedItems.size() == 1);
@@ -637,11 +587,7 @@ TEST_CASE(Solver_ItemTooLargeForAnyBox_BecomesUnplacedWithReason) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0);
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({giant}, {box}, constraints);
-=======
     PackingSolution solution = solverSolve({giant}, {box}, constraints);
->>>>>>> Stashed changes
 
     CHECK(solution.placements.empty());
     REQUIRE(solution.unplacedItems.size() == 1);
@@ -656,40 +602,22 @@ TEST_CASE(Solver_InactiveBoxTypeNeverUsed) {
     BoxType active = makeBox("BOX-ACTIVE", dim(100, 100, 100), 50.0);
     Constraints constraints = makeConstraints();
 
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve({item}, {inactive, active}, constraints);
-=======
     PackingSolution solution = solverSolve({item}, {inactive, active}, constraints);
->>>>>>> Stashed changes
 
     REQUIRE(solution.placements.size() == 1);
     CHECK(solution.placements[0].boxReference == "BOX-ACTIVE");
 }
 
-<<<<<<< Updated upstream
-// =============================================================================
-// SECTION 3 — Integration tests: solve() output fed straight into validate()
-// This is the core of what was asked: proving the two modules still agree
-// with each other once wired together end-to-end.
-// =============================================================================
-
-// Small helper shared by the integration tests below.
-=======
 // SECTION 3 — Integration tests: solve() output fed straight into validate()
 // This is the core of what was asked: proving the two modules still agree
 // with each other once wired together end-to-end.
 // Small helper shared by the integration tests below.
 
->>>>>>> Stashed changes
 static ValidationResult solveAndValidate(const std::vector<Item>& items,
                                           const std::vector<BoxType>& boxes,
                                           const Constraints& constraints,
                                           PackingSolution* outSolution = nullptr) {
-<<<<<<< Updated upstream
-    PackingSolution solution = PackingSolver::solve(items, boxes, constraints);
-=======
     PackingSolution solution = solverSolve(items, boxes, constraints);
->>>>>>> Stashed changes
     ValidationResult result = Validator::validate(solution, items, boxes, constraints);
     if (outSolution) *outSolution = solution;
     return result;
@@ -865,13 +793,7 @@ TEST_CASE(Integration_ZeroWeightItems_StillValid) {
     CHECK(result.valid);
 }
 
-<<<<<<< Updated upstream
-// =============================================================================
 // Runner
-// =============================================================================
-=======
-// Runner
->>>>>>> Stashed changes
 int main() {
     int passed = 0;
     int failed = 0;
