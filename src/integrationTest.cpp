@@ -113,16 +113,6 @@ Constraints makeConstraints(bool enforceBoxGroups = false) {
     return c;
 }
 
-// PackingSolver::solve is a member function (constraints live on the instance,
-// not passed as an argument) — this wraps it so call sites below can pass
-// constraints positionally like the rest of the fixtures in this file.
-PackingSolution solverSolve(const std::vector<Item>& items, const std::vector<BoxType>& boxes,
-                             const Constraints& constraints) {
-    PackingSolver solver;
-    solver.constraints = constraints;
-    return solver.solve(items, boxes);
-}
-
 bool hasViolation(const ValidationResult& r, const std::string& code) {
     for (const auto& v : r.violations) {
         if (v.code == code) return true;
@@ -518,7 +508,7 @@ TEST_CASE(Solver_SingleItemFitsInSmallestSufficientBox) {
     BoxType large = makeBox("BOX-L", dim(100, 100, 100), 50.0);
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({item}, {small, large}, constraints);
+    PackingSolution solution = PackingSolver::solve({item}, {small, large}, constraints);
 
     REQUIRE(solution.placements.size() == 1);
     CHECK(solution.placements[0].itemCode == "ITEM-1");
@@ -532,7 +522,7 @@ TEST_CASE(Solver_MultipleSmallItemsShareOneBoxWhenTheyFit) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, -1); // room for both
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({a, b}, {box}, constraints);
+    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
 
     CHECK(solution.unplacedItems.empty());
     REQUIRE(solution.placements.size() == 2);
@@ -548,7 +538,7 @@ TEST_CASE(Solver_OpensSecondBoxInstanceWhenFirstIsFull) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, -1);
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({a, b}, {box}, constraints);
+    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
 
     CHECK(solution.unplacedItems.empty());
     REQUIRE(solution.usedBoxes.size() == 2);
@@ -560,7 +550,7 @@ TEST_CASE(Solver_RespectsBoxWeightLimit) {
     BoxType box = makeBox("BOX-S", dim(50, 50, 50), /*maxWeight=*/10.0, -1); // both fit spatially, not by weight
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({a, b}, {box}, constraints);
+    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
 
     CHECK(solution.unplacedItems.empty());
     for (const auto& used : solution.usedBoxes) {
@@ -575,7 +565,7 @@ TEST_CASE(Solver_RespectsMaximumBoxesLimit_ExtraItemBecomesUnplaced) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0, /*maximumBoxes=*/1);
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({a, b}, {box}, constraints);
+    PackingSolution solution = PackingSolver::solve({a, b}, {box}, constraints);
 
     CHECK(solution.placements.size() == 1);
     REQUIRE(solution.unplacedItems.size() == 1);
@@ -587,7 +577,7 @@ TEST_CASE(Solver_ItemTooLargeForAnyBox_BecomesUnplacedWithReason) {
     BoxType box = makeBox("BOX-S", dim(10, 10, 10), 50.0);
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({giant}, {box}, constraints);
+    PackingSolution solution = PackingSolver::solve({giant}, {box}, constraints);
 
     CHECK(solution.placements.empty());
     REQUIRE(solution.unplacedItems.size() == 1);
@@ -602,7 +592,7 @@ TEST_CASE(Solver_InactiveBoxTypeNeverUsed) {
     BoxType active = makeBox("BOX-ACTIVE", dim(100, 100, 100), 50.0);
     Constraints constraints = makeConstraints();
 
-    PackingSolution solution = solverSolve({item}, {inactive, active}, constraints);
+    PackingSolution solution = PackingSolver::solve({item}, {inactive, active}, constraints);
 
     REQUIRE(solution.placements.size() == 1);
     CHECK(solution.placements[0].boxReference == "BOX-ACTIVE");
@@ -617,7 +607,7 @@ static ValidationResult solveAndValidate(const std::vector<Item>& items,
                                           const std::vector<BoxType>& boxes,
                                           const Constraints& constraints,
                                           PackingSolution* outSolution = nullptr) {
-    PackingSolution solution = solverSolve(items, boxes, constraints);
+    PackingSolution solution = PackingSolver::solve(items, boxes, constraints);
     ValidationResult result = Validator::validate(solution, items, boxes, constraints);
     if (outSolution) *outSolution = solution;
     return result;

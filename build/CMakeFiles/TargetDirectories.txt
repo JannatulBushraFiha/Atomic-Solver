@@ -1,5 +1,5 @@
-C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/PerfectFitSolver.dir
-C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/IntegrationTests.dir
+C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/solver.dir
+C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/integrationTest.dir
 C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/test.dir
 C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/edit_cache.dir
 C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/CMakeFiles/rebuild_cache.dir

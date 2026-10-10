@@ -7,27 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-add_executable(PerfectFitSolver
+add_executable(solver
     src/main.cpp
+    src/Item.cpp
+    src/Orientation.cpp
+    src/PackingSolution.cpp
     src/PackingSolver.cpp
+    src/Placement.cpp
+    src/Position.cpp
     src/Constraints.cpp
     src/Validator.cpp
-<<<<<<< Updated upstream
-    src/Orientation.cpp
-)
-
-enable_testing()
-
-add_executable(IntegrationTests
-    src/integrationTest.cpp
-    src/PackingSolver.cpp
-    src/Constraints.cpp
-    src/Validator.cpp
-    src/Orientation.cpp
-)
-
-add_test(NAME IntegrationTests COMMAND IntegrationTests)
-=======
 )
 
 add_executable(integrationTest
@@ -44,4 +33,3 @@ add_executable(integrationTest
 
 enable_testing()
 add_test(NAME integrationTest COMMAND integrationTest)
->>>>>>> Stashed changes

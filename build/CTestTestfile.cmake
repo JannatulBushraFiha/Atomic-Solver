@@ -4,5 +4,5 @@
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.
-add_test("IntegrationTests" "C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/IntegrationTests.exe")
-set_tests_properties("IntegrationTests" PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/CMakeLists.txt;28;add_test;C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/CMakeLists.txt;0;")
+add_test("integrationTest" "C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/build/integrationTest.exe")
+set_tests_properties("integrationTest" PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/CMakeLists.txt;35;add_test;C:/Users/Andre/OneDrive/Documents/UNI/COMP4050/Atomic-Solver/CMakeLists.txt;0;")

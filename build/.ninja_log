@@ -1,9 +1,0 @@
-# ninja log v7
-188	572	8117750537759063	CMakeFiles/IntegrationTests.dir/src/Orientation.cpp.obj	b8c88a19e55a12fc
-77	1316	8117750536651513	CMakeFiles/IntegrationTests.dir/src/Constraints.cpp.obj	a3f8919d6735da5
-40	1874	8117750536290093	CMakeFiles/IntegrationTests.dir/src/PackingSolver.cpp.obj	d8a247420e14397c
-124	2075	8117750537124681	CMakeFiles/IntegrationTests.dir/src/Validator.cpp.obj	2014cf056f1c88bb
-6	2394	8117750535945053	CMakeFiles/IntegrationTests.dir/src/integrationTest.cpp.obj	90035fa94701abe6
-2395	4531	8117750559832804	IntegrationTests.exe	1cbe673efdcf3807
-9	1625	8117753857069289	CMakeFiles/IntegrationTests.dir/src/Validator.cpp.obj	2014cf056f1c88bb
-1633	3850	8117753873215371	IntegrationTests.exe	1cbe673efdcf3807
