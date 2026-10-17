@@ -500,6 +500,52 @@ TEST_CASE(Validator_UnplacedItemMissingReason) {
     CHECK(hasViolation(result, "MISSING_REASON", "ITEM-1"));
 }
 
+TEST_CASE(Validator_ItemExtendsBeyondBoxBoundary_IsRejected) {
+    BoxType box = makeBox("BOX-1", dim(10, 10, 10), 100.0);
+
+    Item item = makeItem("ITEM-1", dim(3, 3, 3), 1.0);
+
+    std::vector<Item> items = {item};
+    std::vector<BoxType> boxes = {box};
+
+    PackingSolution solution;
+    solution.placements.push_back(
+        makePlacement("ITEM-1", "BOX-1", 1,
+                      pos(8, 2, 2), dim(3, 3, 3))
+    );
+
+    ValidationResult result =
+        Validator::validate(solution, items, boxes, makeConstraints());
+
+    CHECK(!result.valid);
+}
+
+
+TEST_CASE(Validator_TwoItemsOverlap_IsRejected) {
+    BoxType box = makeBox("BOX-1", dim(10, 10, 10), 100.0);
+
+    Item itemA = makeItem("ITEM-A", dim(3, 3, 3), 1.0);
+    Item itemB = makeItem("ITEM-B", dim(3, 3, 3), 1.0);
+
+    std::vector<Item> items = {itemA, itemB};
+    std::vector<BoxType> boxes = {box};
+
+    PackingSolution solution;
+    solution.placements.push_back(
+        makePlacement("ITEM-A", "BOX-1", 1,
+                      pos(1, 1, 1), dim(3, 3, 3))
+    );
+    solution.placements.push_back(
+        makePlacement("ITEM-B", "BOX-1", 1,
+                      pos(1, 1, 1), dim(3, 3, 3))
+    );
+
+    ValidationResult result =
+        Validator::validate(solution, items, boxes, makeConstraints());
+
+    CHECK(!result.valid);
+}
+
 // SECTION 2 — PackingSolver unit tests (solver only, output not yet validated)
 
 TEST_CASE(Solver_SingleItemFitsInSmallestSufficientBox) {
@@ -965,6 +1011,82 @@ TEST_CASE(Integration_SameDangerousGoodsClass_ZeroWeight_SolverOutputPassesValid
     CHECK(solution.placements.size() == 2);
     CHECK(solution.unplacedItems.empty());
 }
+
+
+TEST_CASE(Integration_TwoZeroWeightFragileItems_SolverOutputPassesValidator) {
+    Item fragileA = makeItem("FRAG-ZERO-A", dim(2, 2, 2), 0.0);
+    fragileA.isFragile = true;
+
+    Item fragileB = makeItem("FRAG-ZERO-B", dim(2, 2, 2), 0.0);
+    fragileB.isFragile = true;
+
+    std::vector<Item> items = {fragileA, fragileB};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+TEST_CASE(Integration_ZeroWeightFragileThenPositiveWeightOrdinary_SolverOutputPassesValidator) {
+    Item fragile = makeItem("FRAG-ZERO", dim(3, 3, 1), 0.0);
+    fragile.isFragile = true;
+
+    Item ordinary = makeItem("ORD-POSITIVE", dim(2, 2, 2), 1.0);
+
+    std::vector<Item> items = {fragile, ordinary};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+TEST_CASE(Integration_PositiveWeightFragileThenZeroWeightOrdinary_SolverOutputPassesValidator) {
+    Item fragile = makeItem("FRAG-POSITIVE", dim(3, 3, 1), 1.0);
+    fragile.isFragile = true;
+
+    Item ordinary = makeItem("ORD-ZERO", dim(2, 2, 2), 0.0);
+
+    std::vector<Item> items = {fragile, ordinary};
+    std::vector<BoxType> boxes = {
+        makeBox("BOX", dim(10, 10, 10), 50.0, -1),
+    };
+    Constraints constraints = makeConstraints();
+
+    PackingSolution solution;
+    ValidationResult result = solveAndValidate(
+        items, boxes, constraints, &solution
+    );
+
+    if (!result.valid) dump(result);
+    CHECK(result.valid);
+    CHECK(solution.placements.size() == 2);
+    CHECK(solution.unplacedItems.empty());
+}
+
+
+
 
 
 //SECTION 4 - CONSTRAINTS TESTING --> directly tests constraints without validator
