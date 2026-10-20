@@ -11,6 +11,7 @@
 struct BoxState {
     double maxWeight = 0.0;
     double currentWeight = 0.0;
+    int itemCount = 0; // how many items are in the box (weight can't tell, an item may weigh 0)
     std::string group;
     bool hasDangerousGoods = false;
     std::string dangerousGoodsClass;
