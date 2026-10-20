@@ -31,6 +31,7 @@ struct BoxInstance {
     int instanceNumber;
     double maxWeight;
     double currentWeight = 0.0;
+    int itemCount = 0;
     std::string group; // empty = not yet assigned to a group
     bool hasDangerousGoods = false;
     std::string dangerousGoodsClass;
@@ -91,6 +92,7 @@ BoxState toBoxState(const BoxInstance& box) {
     BoxState state;
     state.maxWeight = box.maxWeight;
     state.currentWeight = box.currentWeight;
+    state.itemCount = box.itemCount;
     state.group = box.group;
     state.hasDangerousGoods = box.hasDangerousGoods;
     state.dangerousGoodsClass = box.dangerousGoodsClass;
@@ -171,6 +173,7 @@ void commitFit(BoxInstance& box, const Item& item, const FitCandidate& fit, Plac
 
     splitFreeSpace(box.freeSpaces, fit.spaceIdx, fit.rotation, item.weight, item.isFragile);
     box.currentWeight += item.weight;
+    box.itemCount++;
     if (!item.boxGroup.empty()) box.group = item.boxGroup;
     if (item.isDangerousGoods) {
         box.hasDangerousGoods = true;

@@ -17,3 +17,12 @@ add_executable(solver
     src/Constraints.cpp
     src/Validator.cpp
 )
+
+# ---- tests ----
+enable_testing()
+file(GLOB ENGINE_SOURCES src/*.cpp)
+list(FILTER ENGINE_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+file(GLOB TEST_SOURCES tests/*.cpp)
+add_executable(run_tests ${TEST_SOURCES} ${ENGINE_SOURCES})
+target_include_directories(run_tests PRIVATE include tests)
+add_test(NAME all_tests COMMAND run_tests)
