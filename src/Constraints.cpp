@@ -156,7 +156,7 @@ bool Constraints::allowsPlacement(const BoxState& box, const Item& item, Violati
     }
 
     if (item.isDangerousGoods) {
-        if (box.currentWeight > 0.0 && (!box.hasDangerousGoods || box.dangerousGoodsClass != item.dangerousGoodsClass)) {
+        if (box.itemCount > 0 && (!box.hasDangerousGoods || box.dangerousGoodsClass != item.dangerousGoodsClass)) {
             out.code = "DANGEROUS_GOODS_MUST_BE_SEPARATE";
             out.message = "Dangerous goods class " + item.dangerousGoodsClass + " must be packed in a dedicated box";
             return false;
@@ -169,7 +169,7 @@ bool Constraints::allowsPlacement(const BoxState& box, const Item& item, Violati
     }
 
     // Fragile items must be packed alone, same treatment as dangerous goods
-    if (item.isFragile && box.currentWeight > 0.0 && !box.hasFragile) {
+    if (item.isFragile && box.itemCount > 0 && !box.hasFragile) {
         out.code = "FRAGILE_MUST_BE_SEPARATE";
         out.message = "Fragile items must be packed in a dedicated box";
         return false;
