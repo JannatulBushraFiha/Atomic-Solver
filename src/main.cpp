@@ -3,6 +3,8 @@
 #include <string>
 #include <chrono>
 #include <map>
+#include <cmath>
+#include <limits>
 
 #include "json.hpp"
 #include "BoxType.h"
@@ -12,12 +14,22 @@
 
 using json = nlohmann::json;
 
+int parseDimensionValue(const json& value) {
+    const long double dimension = value.get<long double>();
+    if (!std::isfinite(dimension) ||
+        dimension < std::numeric_limits<int>::min() ||
+        dimension > std::numeric_limits<int>::max()) {
+        throw std::out_of_range("Dimension is outside the supported integer range");
+    }
+    return static_cast<int>(dimension);
+}
+
 BoxType parseBoxType(const json& j) {
     BoxType b;
     b.reference = j.at("Reference").get<std::string>();
-    b.boxDimension.width  = j.at("Width").get<int>();
-    b.boxDimension.length = j.at("Length").get<int>();
-    b.boxDimension.depth  = j.at("Depth").get<int>();
+    b.boxDimension.width  = parseDimensionValue(j.at("Width"));
+    b.boxDimension.length = parseDimensionValue(j.at("Length"));
+    b.boxDimension.depth  = parseDimensionValue(j.at("Depth"));
     b.maxWeight    = j.value("MaxWeight", 0.0);
     b.boxWeight    = j.value("BoxWeight", 0.0);
     b.active       = j.value("Active", true);
@@ -29,9 +41,9 @@ Item parseItem(const json& j) {
     Item item;
     item.itemCode = j.at("ItemCode").get<std::string>();
     item.itemReference = j.at("ItemReference").get<std::string>();
-    item.itemDimension.width  = j.at("Width").get<int>();
-    item.itemDimension.length = j.at("Length").get<int>();
-    item.itemDimension.depth  = j.at("Depth").get<int>();
+    item.itemDimension.width  = parseDimensionValue(j.at("Width"));
+    item.itemDimension.length = parseDimensionValue(j.at("Length"));
+    item.itemDimension.depth  = parseDimensionValue(j.at("Depth"));
     item.weight = j.at("Weight").get<double>();
     item.boxGroup = j.value("BoxGroup", std::string(""));
     item.isFragile = j.value("IsFragile", false);
