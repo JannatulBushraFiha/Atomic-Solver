@@ -117,6 +117,36 @@ json validInput() {
     };
 }
 
+json boxJson(const std::string& reference, double width, double length, double depth, double maxWeight) {
+    return {
+        { "Reference", reference },
+        { "Width", width },
+        { "Length", length },
+        { "Depth", depth },
+        { "MaxWeight", maxWeight }
+    };
+}
+
+json itemJson(const std::string& code, double width, double length, double depth, double weight) {
+    return {
+        { "ItemCode", code },
+        { "ItemReference", code },
+        { "Width", width },
+        { "Length", length },
+        { "Depth", depth },
+        { "Weight", weight }
+    };
+}
+
+json jobJson(const std::vector<json>& boxes, const std::vector<json>& items) {
+    return { { "boxTypes", boxes }, { "items", items } };
+}
+
+int sumOfSides(const json& placement) {
+    const json& size = placement.at("placedDimension");
+    return size.at("width").get<int>() + size.at("length").get<int>() + size.at("depth").get<int>();
+}
+
 TEST(cli_rejects_malformed_json) {
     const ProcessResult result = runSolver("{not valid json");
     CHECK(result.exitCode != 0);
@@ -241,6 +271,7 @@ TEST(cli_rejects_negative_quantity) {
     }
 }
 
+// None of these are valid JSON numbers, so the JSON parser is what rejects them.
 TEST(cli_rejects_non_finite_weights) {
     for (const std::string& weight : { "NaN", "Infinity", "-Infinity", "1e309" }) {
         json input = validInput();
@@ -260,6 +291,9 @@ TEST(cli_rejects_non_finite_weights) {
         CHECK(!output.is_discarded());
         if (!output.is_discarded()) {
             CHECK(output.contains("error"));
+            if (output.contains("error")) {
+                CHECK(output["error"].get<std::string>().find("Invalid JSON:") == 0);
+            }
         }
     }
 }
@@ -287,6 +321,179 @@ TEST(cli_rejects_dimensions_outside_integer_range) {
     }
 }
 
+TEST(cli_rejects_items_with_missing_or_wrong_fields) {
+    json missingWeight = validInput();
+    missingWeight["items"][0].erase("Weight");
+    json wrongWeight = validInput();
+    wrongWeight["items"][0]["Weight"] = "heavy";
+
+    for (const json& input : std::vector<json>{ missingWeight, wrongWeight }) {
+        const ProcessResult result = runSolver(input.dump());
+        CHECK(result.exitCode != 0);
+        const json output = json::parse(result.output, nullptr, false);
+        REQUIRE(!output.is_discarded());
+        CHECK(output.at("error").get<std::string>().find("Bad input:") == 0);
+    }
+}
+
+TEST(cli_rejects_box_types_or_items_that_are_not_lists) {
+    json boxesAsObject = validInput();
+    boxesAsObject["boxTypes"] = { { "first", validInput()["boxTypes"][0] } };
+    json itemsAsObject = validInput();
+    itemsAsObject["items"] = { { "first", validInput()["items"][0] } };
+
+    for (const json& input : std::vector<json>{ boxesAsObject, itemsAsObject }) {
+        const ProcessResult result = runSolver(input.dump());
+        CHECK(result.exitCode != 0);
+        const json output = json::parse(result.output, nullptr, false);
+        REQUIRE(!output.is_discarded());
+        CHECK(output.at("error").get<std::string>().find("Bad input:") == 0);
+    }
+}
+
+TEST(cli_rejects_fractional_quantity) {
+    json input = validInput();
+    input["items"][0]["Quantity"] = 2.5;
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode != 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("error").get<std::string>().find("Bad input:") == 0);
+}
+
+TEST(cli_accepts_a_whole_quantity_written_as_a_decimal) {
+    json input = validInput();
+    input["items"][0]["Quantity"] = 3.0;
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("placements").size() == 3);
+}
+
+TEST(cli_quantity_maps_unplaced_items_back_to_input_code) {
+    json input = validInput();
+    input["items"][0]["Width"] = 500;
+    input["items"][0]["Quantity"] = 2;
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("unplacedItems") == json::array({ "ITEM", "ITEM" }));
+    REQUIRE(output.at("violations").size() == 2);
+    for (const auto& violation : output.at("violations")) {
+        CHECK(violation.at("itemCode") == "ITEM");
+    }
+    CHECK(output.at("validation").at("valid") == true);
+}
+
+// BOOK x2 is split into units internally, which must not clash with the item really called BOOK-1.
+TEST(cli_quantity_codes_do_not_clash_with_other_item_codes) {
+    json book = itemJson("BOOK", 10, 10, 10, 1.0);
+    book["Quantity"] = 2;
+    const json input = jobJson({ boxJson("BOX", 100, 100, 100, 100.0) }, { book, itemJson("BOOK-1", 50, 50, 50, 3.0) });
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("validation").at("valid") == true);
+
+    int books = 0;
+    int bigBooks = 0;
+    for (const auto& placement : output.at("placements")) {
+        if (placement.at("itemCode") == "BOOK") {
+            books++;
+            CHECK(sumOfSides(placement) == 30);
+        }
+        if (placement.at("itemCode") == "BOOK-1") {
+            bigBooks++;
+            CHECK(sumOfSides(placement) == 150);
+        }
+    }
+    CHECK(books == 2);
+    CHECK(bigBooks == 1);
+}
+
+// Two input lines with the same code are still packed; the validation output flags the duplicate.
+TEST(cli_duplicate_item_codes_are_packed_but_flagged) {
+    const json input = jobJson({ boxJson("BOX", 100, 100, 100, 100.0) },
+                               { itemJson("A", 10, 10, 10, 1.0), itemJson("A", 10, 10, 10, 1.0) });
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("placements").size() == 2);
+    CHECK(output.at("validation").at("valid") == false);
+
+    bool flagged = false;
+    for (const auto& issue : output.at("validation").at("issues")) {
+        if (issue.at("code") == "DUPLICATE_ITEM_CODE" && issue.at("itemCode") == "A") flagged = true;
+    }
+    CHECK(flagged);
+}
+
+// Item sizes round up: a 10.2 wide item needs 11 units of room, and a 0.5 thick one still takes 1.
+TEST(cli_rounds_item_dimensions_up) {
+    const json input = jobJson({ boxJson("BOX", 10, 10, 10, 100.0) },
+                               { itemJson("TOO-WIDE", 10.2, 10, 10, 1.0), itemJson("THIN", 0.5, 10, 10, 1.0) });
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    REQUIRE(output.at("placements").size() == 1);
+    CHECK(output.at("placements").at(0).at("itemCode") == "THIN");
+    CHECK(sumOfSides(output.at("placements").at(0)) == 21);
+    CHECK(output.at("unplacedItems") == json::array({ "TOO-WIDE" }));
+    REQUIRE(output.at("violations").size() == 1);
+    CHECK(output.at("violations").at(0).at("code") == "NO_BOX_FITS");
+}
+
+// Box sizes round down: a 10.9 box only has 10 whole units of room.
+TEST(cli_rounds_box_dimensions_down) {
+    const json input = jobJson({ boxJson("BOX", 10.9, 10.9, 10.9, 100.0) },
+                               { itemJson("FITS", 10, 10, 10, 1.0), itemJson("TOO-BIG", 11, 1, 1, 1.0) });
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    REQUIRE(output.at("placements").size() == 1);
+    CHECK(output.at("placements").at(0).at("itemCode") == "FITS");
+    CHECK(output.at("unplacedItems") == json::array({ "TOO-BIG" }));
+}
+
+TEST(cli_does_not_round_away_tiny_floating_point_noise) {
+    const json input = jobJson({ boxJson("BOX", 9.9999999999, 10, 10, 100.0) },
+                               { itemJson("A", 10.0000000001, 10, 10, 1.0) });
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    CHECK(output.at("placements").size() == 1);
+    CHECK(output.at("unplacedItems").empty());
+}
+
+TEST(cli_total_weight_includes_the_box_weight) {
+    json input = validInput();
+    input["boxTypes"][0]["BoxWeight"] = 0.5;
+
+    const ProcessResult result = runSolver(input.dump());
+    CHECK(result.exitCode == 0);
+    const json output = json::parse(result.output, nullptr, false);
+    REQUIRE(!output.is_discarded());
+    REQUIRE(output.at("usedBoxes").size() == 1);
+    const double totalWeight = output.at("usedBoxes").at(0).at("totalWeight").get<double>();
+    CHECK(totalWeight > 1.49 && totalWeight < 1.51);
+    CHECK(output.at("validation").at("valid") == true);
+}
+
 TEST(constraints_reject_large_item_volume_above_configured_limit) {
     Constraints constraints;
     constraints.maxItemVolume = 999999999999999999LL;
@@ -309,6 +516,10 @@ TEST(solver_allows_fragile_support_load_below_and_at_limit) {
         const PackingSolution solution = solver.solve({ fragileBase, topItem }, { box });
         CHECK(solution.unplacedItems.empty());
         CHECK(solution.placements.size() == 2);
+        CHECK(solution.usedBoxes.size() == 1);
+        for (const auto& placement : solution.placements) {
+            if (placement.itemCode == "TOP") CHECK(placement.position.z == 2);
+        }
     }
 }
 

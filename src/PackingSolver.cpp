@@ -30,6 +30,7 @@ struct BoxInstance {
     std::string reference;
     int instanceNumber;
     double maxWeight;
+    double boxWeight = 0.0;
     double currentWeight = 0.0;
     int itemCount = 0;
     std::string group; // empty = not yet assigned to a group
@@ -91,6 +92,7 @@ void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dime
 BoxState toBoxState(const BoxInstance& box) {
     BoxState state;
     state.maxWeight = box.maxWeight;
+    state.boxWeight = box.boxWeight;
     state.currentWeight = box.currentWeight;
     state.itemCount = box.itemCount;
     state.group = box.group;
@@ -258,7 +260,7 @@ PackingSolution PackingSolver::solve(
                 for (const auto& boxType : openOrder) {
                     int usedCount = boxTypeCount[boxType.reference];
                     if (boxType.maximumBoxes != -1 && usedCount >= boxType.maximumBoxes) continue;
-                    if (boxType.maxWeight > 0 && item.weight > boxType.maxWeight) continue;
+                    if (boxType.maxWeight > 0 && boxType.boxWeight + item.weight > boxType.maxWeight + WEIGHT_TOLERANCE) continue;
 
                     auto rotations = constraints.permittedRotations(item);
                     bool fitsAny = false;
@@ -276,6 +278,7 @@ PackingSolution PackingSolver::solve(
                     newBox.reference = boxType.reference;
                     newBox.instanceNumber = usedCount + 1;
                     newBox.maxWeight = boxType.maxWeight;
+                    newBox.boxWeight = boxType.boxWeight;
                     newBox.freeSpaces.push_back({0, 0, 0, boxType.boxDimension.width,
                                                   boxType.boxDimension.length,
                                                   usableDepth(boxType.boxDimension.depth)});
@@ -305,7 +308,7 @@ PackingSolution PackingSolver::solve(
         }
 
         for (const auto& box : openBoxes) {
-            solution.usedBoxes.push_back({ box.reference, box.instanceNumber, box.currentWeight });
+            solution.usedBoxes.push_back({ box.reference, box.instanceNumber, box.boxWeight + box.currentWeight });
         }
         return PlanState{ solution, openBoxes };
     };
@@ -400,7 +403,7 @@ PackingSolution PackingSolver::solve(
                 p.boxInstance = number;
                 out.placements.push_back(p);
             }
-            out.usedBoxes.push_back({ boxes[i].reference, number, boxes[i].currentWeight });
+            out.usedBoxes.push_back({ boxes[i].reference, number, boxes[i].boxWeight + boxes[i].currentWeight });
             boxes[i].instanceNumber = number;
         }
         return PlanState{ out, boxes };
@@ -426,7 +429,7 @@ PackingSolution PackingSolver::solve(
         };
         auto fillOf = [&](const BoxInstance& b, const std::vector<Placement>& ps) {
             const BoxType* bt = typeOf(b.reference);
-            double wf = (bt && bt->maxWeight > 0) ? b.currentWeight / bt->maxWeight : 0.0;
+            double wf = (bt && bt->maxWeight > 0) ? (b.boxWeight + b.currentWeight) / bt->maxWeight : 0.0;
             long long v = 0;
             for (const auto& p : ps) v += volume(itemByCode[p.itemCode]->itemDimension);
             double vf = bt ? static_cast<double>(v) / static_cast<double>(volume(bt->boxDimension)) : 0.0;
@@ -508,8 +511,8 @@ PackingSolution PackingSolver::solve(
                 std::vector<std::pair<double, const BoxType*>> options;
                 for (const auto& bt : activeBoxes) {
                     if (bt.maximumBoxes != -1 && typeCount[bt.reference] >= bt.maximumBoxes) continue;
-                    if (bt.maxWeight > 0 && it->weight > bt.maxWeight) continue;
-                    double capW = bt.maxWeight > 0 ? bt.maxWeight / avgW : 1e18;
+                    if (bt.maxWeight > 0 && bt.boxWeight + it->weight > bt.maxWeight + WEIGHT_TOLERANCE) continue;
+                    double capW = bt.maxWeight > 0 ? (bt.maxWeight - bt.boxWeight) / avgW : 1e18;
                     double capV = 0.7 * static_cast<double>(volume(bt.boxDimension)) / avgV;
                     options.push_back({ std::min(capW, capV), &bt });
                 }
@@ -524,6 +527,7 @@ PackingSolution PackingSolver::solve(
                     nb.reference = bt.reference;
                     nb.instanceNumber = nextId++;
                     nb.maxWeight = bt.maxWeight;
+                    nb.boxWeight = bt.boxWeight;
                     nb.freeSpaces.push_back({0, 0, 0, bt.boxDimension.width, bt.boxDimension.length,
                                               usableDepth(bt.boxDimension.depth)});
                     FitCandidate f = evaluateBestFit(nb, *it, constraints);
@@ -559,7 +563,7 @@ PackingSolution PackingSolver::solve(
                 p.boxInstance = number;
                 out.placements.push_back(p);
             }
-            out.usedBoxes.push_back({ boxes[i].reference, number, boxes[i].currentWeight });
+            out.usedBoxes.push_back({ boxes[i].reference, number, boxes[i].boxWeight + boxes[i].currentWeight });
             boxes[i].instanceNumber = number;
         }
         return PlanState{ out, boxes };
@@ -608,6 +612,7 @@ PackingSolution PackingSolver::solve(
                 trial.reference = target.reference;
                 trial.instanceNumber = 0;
                 trial.maxWeight = target.maxWeight;
+                trial.boxWeight = target.boxWeight;
                 trial.freeSpaces.push_back({0, 0, 0, target.boxDimension.width, target.boxDimension.length,
                                              usableDepth(target.boxDimension.depth)});
                 std::vector<Placement> newPlacements;
@@ -646,6 +651,7 @@ PackingSolution PackingSolver::solve(
             for (const auto& key : finalOrder) {
                 int number = ++nextInstance[key.first];
                 double weight = 0.0;
+                for (const auto& bt : activeBoxes) if (bt.reference == key.first) weight = bt.boxWeight;
                 for (auto p : finalGroups[key]) {
                     weight += itemByCode[p.itemCode]->weight;
                     p.boxInstance = number;

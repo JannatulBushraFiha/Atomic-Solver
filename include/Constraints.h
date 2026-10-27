@@ -8,8 +8,11 @@
 #include "Item.h"
 #include "Violation.h"
 
+const double WEIGHT_TOLERANCE = 1e-6;
+
 struct BoxState {
     double maxWeight = 0.0;
+    double boxWeight = 0.0;
     double currentWeight = 0.0;
     int itemCount = 0; // how many items are in the box (weight can't tell, an item may weigh 0)
     std::string group;
@@ -30,5 +33,6 @@ struct Constraints {
 
     bool checkItem(const Item& item, const std::vector<BoxType>& boxes, Violation& out) const;
     bool allowsPlacement(const BoxState& box, const Item& item, Violation& out) const;
+    bool canRotate(const Item& item) const;
     std::vector<Dimension> permittedRotations(const Item& item) const;
 };

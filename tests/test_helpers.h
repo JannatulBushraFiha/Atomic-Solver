@@ -3,9 +3,11 @@
 // Tiny test helpers so we don't need any extra library.
 // Each TEST(name) { ... } registers itself and the runner in test_main.cpp runs them all.
 // CHECK(x) marks the test as failed (and prints where) if x is false, but keeps going.
+// REQUIRE(x) does the same but stops the test, e.g. before reading s.placements[0].
 
 #include <functional>
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -57,6 +59,15 @@ struct TestRegistrar {
             std::cout << "    FAILED " << __FILE__ << ":" << __LINE__ << "  " #actual " == " #expected \
                       << "  (got " << a_ << ", expected " << b_ << ")\n"; \
             failuresInCurrentTest()++; \
+        } \
+    } while (0)
+
+#define REQUIRE(condition) \
+    do { \
+        if (!(condition)) { \
+            std::cout << "    FAILED " << __FILE__ << ":" << __LINE__ << "  REQUIRE(" #condition ")\n"; \
+            failuresInCurrentTest()++; \
+            return; \
         } \
     } while (0)
 
@@ -127,4 +138,41 @@ inline std::string boxOf(const PackingSolution& solution, const std::string& ite
         if (p.itemCode == itemCode) return p.boxReference + "#" + std::to_string(p.boxInstance);
     }
     return "";
+}
+
+// The validator does not check stacking, so tests do. An item resting on another may not be
+// heavier than it, and on a fragile item may weigh at most half of it (FRAGILE_MAX_LOAD_RATIO).
+inline bool stackingIsLegal(const PackingSolution& solution, const std::vector<Item>& items) {
+    std::map<std::string, const Item*> itemByCode;
+    for (const auto& item : items) itemByCode[item.itemCode] = &item;
+    for (const auto& below : solution.placements) {
+        for (const auto& above : solution.placements) {
+            if (below.boxReference != above.boxReference || below.boxInstance != above.boxInstance) continue;
+            const bool restsOn = above.position.z == below.position.z + below.placedDimension.depth &&
+                                 above.position.x < below.position.x + below.placedDimension.width &&
+                                 below.position.x < above.position.x + above.placedDimension.width &&
+                                 above.position.y < below.position.y + below.placedDimension.length &&
+                                 below.position.y < above.position.y + above.placedDimension.length;
+            if (!restsOn) continue;
+            const Item* lower = itemByCode[below.itemCode];
+            const Item* upper = itemByCode[above.itemCode];
+            if (!lower || !upper) continue;
+            if (upper->weight > lower->weight) return false;
+            if (lower->isFragile && upper->weight > 0.5 * lower->weight) return false;
+        }
+    }
+    return true;
+}
+
+// Boxes of each type must be numbered 1, 2, 3... with no gaps.
+inline bool boxesNumberedFromOne(const PackingSolution& solution) {
+    std::map<std::string, std::set<int>> instancesByType;
+    for (const auto& u : solution.usedBoxes) instancesByType[u.boxReference].insert(u.boxInstance);
+    for (const auto& entry : instancesByType) {
+        int expected = 1;
+        for (int instance : entry.second) {
+            if (instance != expected++) return false;
+        }
+    }
+    return true;
 }

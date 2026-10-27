@@ -43,7 +43,9 @@ TEST(rotations_normal_item_can_rotate_all_ways) {
 TEST(rotations_fragile_item_stays_as_it_is) {
     Constraints c;
     auto rotations = c.permittedRotations(makeFragile("F", 1, 2, 3, 1.0));
-    CHECK_EQ(rotations.size(), static_cast<size_t>(1));
+    REQUIRE(rotations.size() == 1);
+    CHECK_EQ(rotations[0].width, 1);
+    CHECK_EQ(rotations[0].length, 2);
     CHECK_EQ(rotations[0].depth, 3);
 }
 
@@ -74,6 +76,8 @@ TEST(checkItem_rejects_zero_or_negative_dimensions) {
     CHECK(!c.checkItem(makeItem("A", 0, 10, 10, 1.0), boxes, v));
     CHECK_EQ(v.code, std::string("INVALID_DIMENSIONS"));
     CHECK(!c.checkItem(makeItem("B", 10, -5, 10, 1.0), boxes, v));
+    CHECK_EQ(v.code, std::string("INVALID_DIMENSIONS"));
+    CHECK(!c.checkItem(makeItem("C", 10, 10, 0, 1.0), boxes, v));
     CHECK_EQ(v.code, std::string("INVALID_DIMENSIONS"));
 }
 
@@ -138,6 +142,18 @@ TEST(checkItem_max_item_dimension_without_rotation_is_strict) {
     Violation v;
     std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
     CHECK(!c.checkItem(makeItem("A", 10, 20, 50, 1.0), boxes, v));
+    CHECK_EQ(v.code, std::string("ITEM_TOO_LARGE"));
+}
+
+TEST(checkItem_max_item_dimension_is_strict_for_items_that_cannot_be_turned) {
+    Constraints c;
+    c.maxItemDimension = { 50, 20, 10 };
+    Violation v;
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    CHECK(!c.checkItem(makeFragile("F", 10, 20, 50, 1.0), boxes, v));
+    CHECK_EQ(v.code, std::string("ITEM_TOO_LARGE"));
+    CHECK(!c.checkItem(makeDangerous("D", 10, 20, 50, 1.0, "3"), boxes, v));
+    CHECK_EQ(v.code, std::string("ITEM_TOO_LARGE"));
 }
 
 TEST(checkItem_fails_when_there_are_no_active_boxes) {
@@ -189,6 +205,62 @@ TEST(checkItem_box_with_max_weight_zero_means_no_weight_limit) {
     Constraints c;
     Violation v;
     CHECK(c.checkItem(makeItem("A", 10, 10, 10, 9999.0), { makeBox("M", 100, 100, 100, 0.0) }, v));
+}
+
+TEST(checkItem_box_that_fits_is_too_weak_and_box_that_is_strong_enough_is_too_small) {
+    Constraints c;
+    Violation v;
+    std::vector<BoxType> boxes = { makeBox("SMALL", 20, 20, 20, 100.0), makeBox("BIG", 500, 500, 500, 5.0) };
+    CHECK(!c.checkItem(makeItem("A", 100, 100, 100, 10.0), boxes, v));
+    CHECK_EQ(v.code, std::string("NO_BOX_FITS"));
+    CHECK(v.message.find("carries") != std::string::npos);
+}
+
+TEST(checkItem_fragile_item_that_only_fits_when_turned_does_not_fit) {
+    Constraints c;
+    Violation v;
+    std::vector<BoxType> boxes = { makeBox("M", 100, 50, 20, 10.0) };
+    CHECK(!c.checkItem(makeFragile("F", 20, 100, 50, 1.0), boxes, v));
+    CHECK_EQ(v.code, std::string("NO_BOX_FITS"));
+    CHECK(c.checkItem(makeFragile("F2", 100, 50, 20, 1.0), boxes, v));   // already the right way up
+}
+
+TEST(checkItem_dangerous_goods_that_only_fit_when_turned_do_not_fit) {
+    Constraints c;
+    Violation v;
+    std::vector<BoxType> boxes = { makeBox("M", 100, 50, 20, 10.0) };
+    CHECK(!c.checkItem(makeDangerous("D", 20, 100, 50, 1.0, "3"), boxes, v));
+    CHECK_EQ(v.code, std::string("NO_BOX_FITS"));
+}
+
+TEST(checkItem_counts_the_box_weight_towards_its_limit) {
+    Constraints c;
+    Violation v;
+    BoxType box = makeBox("M", 100, 100, 100, 10.0);
+    box.boxWeight = 2.0;
+    CHECK(!c.checkItem(makeItem("A", 10, 10, 10, 9.0), { box }, v));
+    CHECK_EQ(v.code, std::string("NO_BOX_SUPPORTS_WEIGHT"));
+    CHECK(c.checkItem(makeItem("B", 10, 10, 10, 8.0), { box }, v));   // exactly at the limit is fine
+
+    box.boxWeight = 12.0;   // box heavier than its own limit can't take anything
+    CHECK(!c.checkItem(makeItem("C", 10, 10, 10, 0.0), { box }, v));
+    CHECK_EQ(v.code, std::string("NO_BOX_SUPPORTS_WEIGHT"));
+}
+
+TEST(checkItem_box_weight_with_no_weight_limit_is_still_unlimited) {
+    Constraints c;
+    Violation v;
+    BoxType box = makeBox("M", 100, 100, 100, 0.0);
+    box.boxWeight = 5.0;
+    CHECK(c.checkItem(makeItem("A", 10, 10, 10, 9999.0), { box }, v));
+}
+
+TEST(checkItem_weight_limit_allows_for_floating_point_rounding) {
+    Constraints c;
+    Violation v;
+    BoxType box = makeBox("M", 100, 100, 100, 0.3);
+    box.boxWeight = 0.1;
+    CHECK(c.checkItem(makeItem("A", 10, 10, 10, 0.2), { box }, v));   // 0.1 + 0.2 is 0.30000000000000004
 }
 
 // ---------- allowsPlacement ----------
@@ -321,4 +393,39 @@ TEST(placement_zero_weight_dangerous_goods_box_rejects_ordinary_items) {
     box.dangerousGoodsClass = "3";
     Violation v;
     CHECK(!c.allowsPlacement(box, makeItem("A", 1, 1, 1, 1.0), v));
+}
+
+TEST(placement_counts_the_box_weight_towards_its_limit) {
+    Constraints c;
+    BoxState box;
+    box.maxWeight = 10.0;
+    box.boxWeight = 2.0;
+    box.currentWeight = 5.0;
+    box.itemCount = 1;
+    Violation v;
+    CHECK(!c.allowsPlacement(box, makeItem("A", 1, 1, 1, 4.0), v));
+    CHECK_EQ(v.code, std::string("BOX_OVERWEIGHT"));
+    CHECK(c.allowsPlacement(box, makeItem("B", 1, 1, 1, 3.0), v));   // exactly at the limit is fine
+}
+
+TEST(placement_box_weight_with_no_weight_limit_is_still_unlimited) {
+    Constraints c;
+    BoxState box;
+    box.maxWeight = 0.0;
+    box.boxWeight = 5.0;
+    box.currentWeight = 1000.0;
+    box.itemCount = 5;
+    Violation v;
+    CHECK(c.allowsPlacement(box, makeItem("A", 1, 1, 1, 500.0), v));
+}
+
+TEST(placement_weight_limit_allows_for_floating_point_rounding) {
+    Constraints c;
+    BoxState box;
+    box.maxWeight = 0.3;
+    box.currentWeight = 0.1 + 0.1;
+    box.itemCount = 2;
+    Violation v;
+    CHECK(c.allowsPlacement(box, makeItem("A", 1, 1, 1, 0.1), v));   // 0.1 + 0.1 + 0.1 is 0.30000000000000004
+    CHECK(!c.allowsPlacement(box, makeItem("B", 1, 1, 1, 0.11), v));
 }

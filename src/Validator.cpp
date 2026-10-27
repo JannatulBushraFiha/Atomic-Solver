@@ -7,8 +7,6 @@
 
 namespace {
 
-const double WEIGHT_TOLERANCE = 1e-6;
-
 struct BoxContents {
     std::string reference;
     int instance = 0;
@@ -247,13 +245,16 @@ ValidationResult Validator::validate(
             add(result, "EMPTY_BOX", "", "Box " + label + " was opened but holds nothing");
         }
 
-        if (std::fabs(packedWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
+        auto boxEntry = boxesByReference.find(used.boxReference);
+        const double boxWeight = boxEntry == boxesByReference.end() ? 0.0 : boxEntry->second->boxWeight;
+        const double totalWeight = boxWeight + packedWeight;
+
+        if (std::fabs(totalWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
             add(result, "WEIGHT_MISMATCH", "",
                 "Box " + label + " reports " + weightText(used.totalWeight) +
-                " but its items weigh " + weightText(packedWeight));
+                " but the box and its items weigh " + weightText(totalWeight));
         }
 
-        auto boxEntry = boxesByReference.find(used.boxReference);
         if (boxEntry == boxesByReference.end()) {
             add(result, "UNKNOWN_BOX_REFERENCE", "",
                 "Box type " + used.boxReference + " is not in the input");
@@ -261,9 +262,9 @@ ValidationResult Validator::validate(
         }
         const BoxType& boxType = *boxEntry->second;
 
-        if (boxType.maxWeight > 0.0 && packedWeight > boxType.maxWeight + WEIGHT_TOLERANCE) {
+        if (boxType.maxWeight > 0.0 && totalWeight > boxType.maxWeight + WEIGHT_TOLERANCE) {
             add(result, "BOX_OVERWEIGHT", "",
-                "Box " + label + " holds " + weightText(packedWeight) +
+                "Box " + label + " weighs " + weightText(totalWeight) +
                 " which is over its limit of " + weightText(boxType.maxWeight));
         }
     }

@@ -56,6 +56,57 @@ TEST(validator_items_that_only_touch_are_not_overlapping) {
     CHECK(!hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
 }
 
+// Items are 10 wide, 20 long and 30 deep, so mixing up width/length/depth on any axis shows up.
+TEST(validator_checks_overlap_on_every_axis) {
+    std::vector<Item> items = { makeItem("A", 10, 20, 30, 1.0), makeItem("B", 10, 20, 30, 1.0) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("A", "M", 1, 0, 0, 0, 10, 20, 30), place("B", "M", 1, 0, 0, 0, 10, 20, 30) };
+    s.usedBoxes = { used("M", 1, 2.0) };
+
+    s.placements[1].position = { 9, 0, 0 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+    s.placements[1].position = { 10, 0, 0 };
+    CHECK(!hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+
+    s.placements[1].position = { 0, 19, 0 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+    s.placements[1].position = { 0, 20, 0 };
+    CHECK(!hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+
+    s.placements[1].position = { 0, 0, 29 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+    s.placements[1].position = { 0, 0, 30 };
+    CHECK(!hasIssue(Validator::validate(s, items, boxes), "OVERLAP"));
+}
+
+TEST(validator_checks_bounds_on_every_axis) {
+    std::vector<Item> items = { makeItem("A", 10, 20, 30, 1.0) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("A", "M", 1, 90, 80, 70, 10, 20, 30) };   // touches the far wall on every axis
+    s.usedBoxes = { used("M", 1, 1.0) };
+    CHECK(!hasIssue(Validator::validate(s, items, boxes), "OUT_OF_BOUNDS"));
+
+    s.placements[0].position = { 91, 0, 0 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OUT_OF_BOUNDS"));
+    s.placements[0].position = { 0, 81, 0 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OUT_OF_BOUNDS"));
+    s.placements[0].position = { 0, 0, 71 };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "OUT_OF_BOUNDS"));
+}
+
+TEST(validator_same_spot_in_different_boxes_is_not_an_overlap) {
+    std::vector<Item> items = { makeItem("A", 10, 10, 10, 1.0), makeItem("B", 10, 10, 10, 1.0) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("A", "M", 1, 0, 0, 0, 10, 10, 10), place("B", "M", 2, 0, 0, 0, 10, 10, 10) };
+    s.usedBoxes = { used("M", 1, 1.0), used("M", 2, 1.0) };
+    auto result = Validator::validate(s, items, boxes);
+    CHECK(result.valid);
+    CHECK(!hasIssue(result, "OVERLAP"));
+}
+
 TEST(validator_catches_items_sticking_out_of_the_box) {
     std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
     goodSetup(items, boxes, s);
@@ -82,6 +133,33 @@ TEST(validator_catches_wrong_reported_box_weight) {
     goodSetup(items, boxes, s);
     s.usedBoxes[0].totalWeight = 99.0;
     CHECK(hasIssue(Validator::validate(s, items, boxes), "WEIGHT_MISMATCH"));
+}
+
+TEST(validator_expects_the_box_weight_in_the_reported_total) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    boxes[0].boxWeight = 0.5;
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "WEIGHT_MISMATCH"));   // 3.0 is the items only
+    s.usedBoxes[0].totalWeight = 3.5;
+    CHECK(Validator::validate(s, items, boxes).valid);
+}
+
+TEST(validator_counts_the_box_weight_towards_its_limit) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    boxes[0].maxWeight = 3.2;   // the 3.0 of items would fit, but not with the box
+    boxes[0].boxWeight = 0.5;
+    s.usedBoxes[0].totalWeight = 3.5;
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "BOX_OVERWEIGHT"));
+}
+
+TEST(validator_weight_limit_allows_for_floating_point_rounding) {
+    std::vector<Item> items = { makeItem("A", 10, 10, 10, 0.1), makeItem("B", 10, 10, 10, 0.1), makeItem("C", 10, 10, 10, 0.1) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 0.3) };
+    PackingSolution s;
+    s.placements = { place("A", "M", 1, 0, 0, 0, 10, 10, 10), place("B", "M", 1, 10, 0, 0, 10, 10, 10), place("C", "M", 1, 20, 0, 0, 10, 10, 10) };
+    s.usedBoxes = { used("M", 1, 0.1 + 0.1 + 0.1) };
+    CHECK(Validator::validate(s, items, boxes).valid);
 }
 
 TEST(validator_catches_an_item_that_vanished) {
@@ -209,4 +287,72 @@ TEST(validator_catches_duplicate_item_codes_in_the_input) {
     std::vector<Item> items = { makeItem("A", 10, 10, 10, 1.0), makeItem("A", 10, 10, 10, 1.0) };
     std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
     CHECK(hasIssue(Validator::validate(PackingSolution{}, items, boxes), "DUPLICATE_ITEM_CODE"));
+}
+
+TEST(validator_catches_a_box_instance_below_one) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    for (auto& p : s.placements) p.boxInstance = 0;
+    s.usedBoxes[0].boxInstance = 0;
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "INVALID_BOX_INSTANCE"));
+}
+
+TEST(validator_catches_a_box_listed_twice) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    s.usedBoxes.push_back(used("M", 1, 3.0));
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "DUPLICATE_BOX_INSTANCE"));
+}
+
+TEST(validator_catches_an_item_listed_as_unplaced_twice) {
+    std::vector<Item> items = { makeItem("A", 10, 10, 10, 1.0) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.unplacedItems = { "A", "A" };
+    s.violations = { { "NO_BOX_FITS", "A", "too big" } };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "DUPLICATE_UNPLACED_ITEM"));
+}
+
+TEST(validator_catches_unknown_unplaced_items) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    s.unplacedItems = { "GHOST" };
+    s.violations = { { "NO_BOX_FITS", "GHOST", "too big" } };
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "UNKNOWN_ITEM"));
+}
+
+TEST(validator_catches_an_unknown_box_type_in_the_used_list) {
+    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
+    goodSetup(items, boxes, s);
+    s.usedBoxes.push_back(used("NOPE", 1, 0.0));
+    CHECK(hasIssue(Validator::validate(s, items, boxes), "UNKNOWN_BOX_REFERENCE"));
+}
+
+TEST(validator_group_rule_can_be_switched_off) {
+    std::vector<Item> items = { makeGrouped("A", 10, 10, 10, 1.0, "X"), makeGrouped("B", 10, 10, 10, 1.0, "Y") };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("A", "M", 1, 0, 0, 0, 10, 10, 10), place("B", "M", 1, 10, 0, 0, 10, 10, 10) };
+    s.usedBoxes = { used("M", 1, 2.0) };
+    Constraints c;
+    c.enforceBoxGroups = false;
+    CHECK(Validator::validate(s, items, boxes, c).valid);
+}
+
+TEST(validator_allows_fragile_items_to_share_a_box) {
+    std::vector<Item> items = { makeFragile("F1", 10, 10, 10, 1.0), makeFragile("F2", 10, 10, 10, 1.0) };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("F1", "M", 1, 0, 0, 0, 10, 10, 10), place("F2", "M", 1, 10, 0, 0, 10, 10, 10) };
+    s.usedBoxes = { used("M", 1, 2.0) };
+    CHECK(Validator::validate(s, items, boxes).valid);
+}
+
+TEST(validator_allows_the_same_dangerous_goods_class_to_share_a_box) {
+    std::vector<Item> items = { makeDangerous("D1", 10, 10, 10, 1.0, "3"), makeDangerous("D2", 10, 10, 10, 1.0, "3") };
+    std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 50.0) };
+    PackingSolution s;
+    s.placements = { place("D1", "M", 1, 0, 0, 0, 10, 10, 10), place("D2", "M", 1, 10, 0, 0, 10, 10, 10) };
+    s.usedBoxes = { used("M", 1, 2.0) };
+    CHECK(Validator::validate(s, items, boxes).valid);
 }
