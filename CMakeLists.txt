@@ -7,29 +7,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-add_executable(solver
-    src/main.cpp
-    src/Item.cpp
+set(SOLVER_SOURCES
     src/Orientation.cpp
-    src/PackingSolution.cpp
     src/PackingSolver.cpp
-    src/Placement.cpp
-    src/Position.cpp
     src/Constraints.cpp
     src/Validator.cpp
 )
 
-add_executable(integrationTest
-    src/integrationTest.cpp
-    src/Item.cpp
-    src/Orientation.cpp
-    src/PackingSolution.cpp
-    src/PackingSolver.cpp
-    src/Placement.cpp
-    src/Position.cpp
-    src/Constraints.cpp
-    src/Validator.cpp
+add_executable(solver src/main.cpp ${SOLVER_SOURCES})
+add_executable(integrationTest src/integrationTest.cpp ${SOLVER_SOURCES})
+add_executable(unitTests
+    tests/test_main.cpp
+    tests/test_constraints.cpp
+    tests/test_solver.cpp
+    tests/test_validator.cpp
+    ${SOLVER_SOURCES}
 )
 
 enable_testing()
 add_test(NAME integrationTest COMMAND integrationTest)
+add_test(NAME unitTests COMMAND unitTests)
