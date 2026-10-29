@@ -3,6 +3,9 @@
 #include <string>
 #include <chrono>
 #include <map>
+#include <set>
+#include <cmath>
+#include <limits>
 
 #include "json.hpp"
 #include "BoxType.h"
@@ -12,12 +15,24 @@
 
 using json = nlohmann::json;
 
+// Sizes with decimals are rounded to whole units (same as before).
+int parseDimensionValue(const json& value, bool roundUp) {
+    const long double raw = value.get<long double>();
+    const long double dimension = roundUp ? std::ceil(raw - 1e-9) : std::floor(raw + 1e-9);
+    if (!std::isfinite(dimension) ||
+        dimension < std::numeric_limits<int>::min() ||
+        dimension > std::numeric_limits<int>::max()) {
+        throw std::out_of_range("Dimension is outside the supported integer range");
+    }
+    return static_cast<int>(dimension);
+}
+
 BoxType parseBoxType(const json& j) {
     BoxType b;
     b.reference = j.at("Reference").get<std::string>();
-    b.boxDimension.width  = j.at("Width").get<int>();
-    b.boxDimension.length = j.at("Length").get<int>();
-    b.boxDimension.depth  = j.at("Depth").get<int>();
+    b.boxDimension.width  = parseDimensionValue(j.at("Width"), false);
+    b.boxDimension.length = parseDimensionValue(j.at("Length"), false);
+    b.boxDimension.depth  = parseDimensionValue(j.at("Depth"), false);
     b.maxWeight    = j.value("MaxWeight", 0.0);
     b.boxWeight    = j.value("BoxWeight", 0.0);
     b.active       = j.value("Active", true);
@@ -29,9 +44,9 @@ Item parseItem(const json& j) {
     Item item;
     item.itemCode = j.at("ItemCode").get<std::string>();
     item.itemReference = j.at("ItemReference").get<std::string>();
-    item.itemDimension.width  = j.at("Width").get<int>();
-    item.itemDimension.length = j.at("Length").get<int>();
-    item.itemDimension.depth  = j.at("Depth").get<int>();
+    item.itemDimension.width  = parseDimensionValue(j.at("Width"), false);
+    item.itemDimension.length = parseDimensionValue(j.at("Length"), false);
+    item.itemDimension.depth  = parseDimensionValue(j.at("Depth"), false);
     item.weight = j.at("Weight").get<double>();
     item.boxGroup = j.value("BoxGroup", std::string(""));
     item.isFragile = j.value("IsFragile", false);
@@ -47,11 +62,14 @@ Item parseItem(const json& j) {
 // Quantity defaults to 1.
 // `originalCodes` remembers which input code each unit came from, so the output can
 // show the code exactly as the caller sent it.
+// `takenCodes` holds every code in use, so a unit never gets the code of another item
+// (if the input also has an item called BOOK-1, the first unit becomes BOOK-1-2 instead).
 void parseItemWithQuantity(const json& j, std::vector<Item>& out,
-                           std::map<std::string, std::string>& originalCodes) {
-    const int quantity = j.value("Quantity", 1);
-    if (quantity < 1) {
-        throw std::runtime_error("Quantity must be at least 1 for item " +
+                           std::map<std::string, std::string>& originalCodes,
+                           std::set<std::string>& takenCodes) {
+    const double quantity = j.value("Quantity", 1.0);
+    if (quantity < 1 || quantity != std::floor(quantity) || quantity > std::numeric_limits<int>::max()) {
+        throw std::runtime_error("Quantity must be a whole number of at least 1 for item " +
                                  j.value("ItemCode", std::string("?")));
     }
 
@@ -61,9 +79,13 @@ void parseItemWithQuantity(const json& j, std::vector<Item>& out,
         out.push_back(base);
         return;
     }
-    for (int n = 1; n <= quantity; n++) {
+    for (int n = 1; n <= static_cast<int>(quantity); n++) {
         Item unit = base;
         unit.itemCode = base.itemCode + "-" + std::to_string(n); // internal unique id only
+        for (int extra = 2; takenCodes.count(unit.itemCode) > 0; extra++) {
+            unit.itemCode = base.itemCode + "-" + std::to_string(n) + "-" + std::to_string(extra);
+        }
+        takenCodes.insert(unit.itemCode);
         originalCodes[unit.itemCode] = base.itemCode;
         out.push_back(unit);
     }
@@ -90,8 +112,13 @@ int main() {
     };
 
     try {
+        if (!input.at("boxTypes").is_array() || !input.at("items").is_array()) {
+            throw std::runtime_error("boxTypes and items must be lists");
+        }
+        std::set<std::string> takenCodes;
+        for (const auto& i : input.at("items"))    takenCodes.insert(i.at("ItemCode").get<std::string>());
         for (const auto& b : input.at("boxTypes")) boxes.push_back(parseBoxType(b));
-        for (const auto& i : input.at("items"))    parseItemWithQuantity(i, items, originalCodes);
+        for (const auto& i : input.at("items"))    parseItemWithQuantity(i, items, originalCodes, takenCodes);
     } catch (const std::exception& e) {
         std::cout << json{{"error", std::string("Bad input: ") + e.what()}}.dump();
         return 1;

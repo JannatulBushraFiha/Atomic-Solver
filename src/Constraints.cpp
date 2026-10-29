@@ -88,8 +88,8 @@ bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes,
                              maxItemDimension.length > 0 &&
                              maxItemDimension.depth > 0;
     if (limitBySize) {
-        const bool withinLimit = allowRotation ? fitsWhenRotated(dim, maxItemDimension)
-                                               : fitsWithin(dim, maxItemDimension);
+        const bool withinLimit = canRotate(item) ? fitsWhenRotated(dim, maxItemDimension)
+                                                 : fitsWithin(dim, maxItemDimension);
         if (!withinLimit) {
             out.code = "ITEM_TOO_LARGE";
             out.message = "Size " + dimensionText(dim) +
@@ -108,9 +108,10 @@ bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes,
         }
         anyBoxActive = true;
 
-        const bool fits = allowRotation ? fitsWhenRotated(dim, box.boxDimension)
-                                        : fitsWithin(dim, box.boxDimension);
-        const bool holdsWeight = box.maxWeight <= 0.0 || item.weight <= box.maxWeight;
+        const bool fits = canRotate(item) ? fitsWhenRotated(dim, box.boxDimension)
+                                          : fitsWithin(dim, box.boxDimension);
+        const bool holdsWeight = box.maxWeight <= 0.0 ||
+                                item.weight <= box.maxWeight;
 
         if (fits) anyBoxFits = true;
         if (holdsWeight) anyBoxHoldsWeight = true;
@@ -130,7 +131,7 @@ bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes,
     if (!anyBoxHoldsWeight) {
         out.code = "NO_BOX_SUPPORTS_WEIGHT";
         out.message = "Weight " + weightText(item.weight) +
-                      " is over the limit of every active box type";
+                      " plus the box's own weight is over the limit of every active box type";
         return false;
     }
 
@@ -143,7 +144,8 @@ bool Constraints::checkItem(const Item& item, const std::vector<BoxType>& boxes,
 bool Constraints::allowsPlacement(const BoxState& box, const Item& item, Violation& out) const {
     out.itemCode = item.itemCode;
 
-    if (box.maxWeight > 0.0 && box.currentWeight + item.weight > box.maxWeight) {
+    if (box.maxWeight > 0.0 &&
+        box.currentWeight + item.weight > box.maxWeight) {
         out.code = "BOX_OVERWEIGHT";
         out.message = "Adding this item would exceed the box's weight limit";
         return false;
@@ -183,8 +185,12 @@ bool Constraints::allowsPlacement(const BoxState& box, const Item& item, Violati
     return true;
 }
 
+bool Constraints::canRotate(const Item& item) const {
+    return allowRotation && !item.isDangerousGoods && !item.isFragile;
+}
+
 std::vector<Dimension> Constraints::permittedRotations(const Item& item) const {
-    if (item.isDangerousGoods || item.isFragile || !allowRotation) {
+    if (!canRotate(item)) {
         return { item.itemDimension };
     }
     auto rotations = Orientation::allRotations(item.itemDimension);

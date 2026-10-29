@@ -1,0 +1,6 @@
+# Store and check out every text file with LF line endings, on Windows too, so editing on
+# one OS doesn't make every file show up as changed on another (and the Docker build gets LF).
+* text=auto eol=lf
+
+# Windows build outputs are binary, never line-ending converted.
+*.exe binary

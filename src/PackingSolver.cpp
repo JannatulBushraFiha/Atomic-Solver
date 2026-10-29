@@ -30,6 +30,7 @@ struct BoxInstance {
     std::string reference;
     int instanceNumber;
     double maxWeight;
+    double boxWeight = 0.0;
     double currentWeight = 0.0;
     int itemCount = 0;
     std::string group; // empty = not yet assigned to a group
@@ -91,6 +92,7 @@ void splitFreeSpace(std::vector<FreeSpace>& spaces, size_t usedIndex, const Dime
 BoxState toBoxState(const BoxInstance& box) {
     BoxState state;
     state.maxWeight = box.maxWeight;
+    state.boxWeight = box.boxWeight;
     state.currentWeight = box.currentWeight;
     state.itemCount = box.itemCount;
     state.group = box.group;
@@ -276,6 +278,7 @@ PackingSolution PackingSolver::solve(
                     newBox.reference = boxType.reference;
                     newBox.instanceNumber = usedCount + 1;
                     newBox.maxWeight = boxType.maxWeight;
+                    newBox.boxWeight = boxType.boxWeight;
                     newBox.freeSpaces.push_back({0, 0, 0, boxType.boxDimension.width,
                                                   boxType.boxDimension.length,
                                                   usableDepth(boxType.boxDimension.depth)});
@@ -524,6 +527,7 @@ PackingSolution PackingSolver::solve(
                     nb.reference = bt.reference;
                     nb.instanceNumber = nextId++;
                     nb.maxWeight = bt.maxWeight;
+                    nb.boxWeight = bt.boxWeight;
                     nb.freeSpaces.push_back({0, 0, 0, bt.boxDimension.width, bt.boxDimension.length,
                                               usableDepth(bt.boxDimension.depth)});
                     FitCandidate f = evaluateBestFit(nb, *it, constraints);
@@ -608,6 +612,7 @@ PackingSolution PackingSolver::solve(
                 trial.reference = target.reference;
                 trial.instanceNumber = 0;
                 trial.maxWeight = target.maxWeight;
+                trial.boxWeight = target.boxWeight;
                 trial.freeSpaces.push_back({0, 0, 0, target.boxDimension.width, target.boxDimension.length,
                                              usableDepth(target.boxDimension.depth)});
                 std::vector<Placement> newPlacements;
@@ -646,6 +651,7 @@ PackingSolution PackingSolver::solve(
             for (const auto& key : finalOrder) {
                 int number = ++nextInstance[key.first];
                 double weight = 0.0;
+                // for (const auto& bt : activeBoxes) if (bt.reference == key.first) weight = bt.boxWeight;
                 for (auto p : finalGroups[key]) {
                     weight += itemByCode[p.itemCode]->weight;
                     p.boxInstance = number;

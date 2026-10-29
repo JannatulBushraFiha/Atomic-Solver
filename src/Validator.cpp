@@ -7,8 +7,6 @@
 
 namespace {
 
-const double WEIGHT_TOLERANCE = 1e-6;
-
 struct BoxContents {
     std::string reference;
     int instance = 0;
@@ -247,13 +245,18 @@ ValidationResult Validator::validate(
             add(result, "EMPTY_BOX", "", "Box " + label + " was opened but holds nothing");
         }
 
+        // auto boxEntry = boxesByReference.find(used.boxReference);
+        // const double boxWeight = boxEntry == boxesByReference.end() ? 0.0 : boxEntry->second->boxWeight;
+        // const double totalWeight = boxWeight + packedWeight;
         if (std::fabs(packedWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
+        // if (std::fabs(totalWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
             add(result, "WEIGHT_MISMATCH", "",
                 "Box " + label + " reports " + weightText(used.totalWeight) +
                 " but its items weigh " + weightText(packedWeight));
         }
-
+        
         auto boxEntry = boxesByReference.find(used.boxReference);
+
         if (boxEntry == boxesByReference.end()) {
             add(result, "UNKNOWN_BOX_REFERENCE", "",
                 "Box type " + used.boxReference + " is not in the input");

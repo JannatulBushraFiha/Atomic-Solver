@@ -3,6 +3,9 @@
 ## **In order to build the program:**
 cmake -S . -B build && cmake --build build
 
+## **To run the tests**
+ctest --test-dir build --output-on-failure
+
 ## **To run the program**
 echo '{
   "boxTypes": [
