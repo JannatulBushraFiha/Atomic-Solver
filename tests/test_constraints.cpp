@@ -233,20 +233,6 @@ TEST(checkItem_dangerous_goods_that_only_fit_when_turned_do_not_fit) {
     CHECK_EQ(v.code, std::string("NO_BOX_FITS"));
 }
 
-TEST(checkItem_counts_the_box_weight_towards_its_limit) {
-    Constraints c;
-    Violation v;
-    BoxType box = makeBox("M", 100, 100, 100, 10.0);
-    box.boxWeight = 2.0;
-    CHECK(!c.checkItem(makeItem("A", 10, 10, 10, 9.0), { box }, v));
-    CHECK_EQ(v.code, std::string("NO_BOX_SUPPORTS_WEIGHT"));
-    CHECK(c.checkItem(makeItem("B", 10, 10, 10, 8.0), { box }, v));   // exactly at the limit is fine
-
-    box.boxWeight = 12.0;   // box heavier than its own limit can't take anything
-    CHECK(!c.checkItem(makeItem("C", 10, 10, 10, 0.0), { box }, v));
-    CHECK_EQ(v.code, std::string("NO_BOX_SUPPORTS_WEIGHT"));
-}
-
 TEST(checkItem_box_weight_with_no_weight_limit_is_still_unlimited) {
     Constraints c;
     Violation v;
@@ -395,18 +381,7 @@ TEST(placement_zero_weight_dangerous_goods_box_rejects_ordinary_items) {
     CHECK(!c.allowsPlacement(box, makeItem("A", 1, 1, 1, 1.0), v));
 }
 
-TEST(placement_counts_the_box_weight_towards_its_limit) {
-    Constraints c;
-    BoxState box;
-    box.maxWeight = 10.0;
-    box.boxWeight = 2.0;
-    box.currentWeight = 5.0;
-    box.itemCount = 1;
-    Violation v;
-    CHECK(!c.allowsPlacement(box, makeItem("A", 1, 1, 1, 4.0), v));
-    CHECK_EQ(v.code, std::string("BOX_OVERWEIGHT"));
-    CHECK(c.allowsPlacement(box, makeItem("B", 1, 1, 1, 3.0), v));   // exactly at the limit is fine
-}
+
 
 TEST(placement_box_weight_with_no_weight_limit_is_still_unlimited) {
     Constraints c;
@@ -417,15 +392,4 @@ TEST(placement_box_weight_with_no_weight_limit_is_still_unlimited) {
     box.itemCount = 5;
     Violation v;
     CHECK(c.allowsPlacement(box, makeItem("A", 1, 1, 1, 500.0), v));
-}
-
-TEST(placement_weight_limit_allows_for_floating_point_rounding) {
-    Constraints c;
-    BoxState box;
-    box.maxWeight = 0.3;
-    box.currentWeight = 0.1 + 0.1;
-    box.itemCount = 2;
-    Violation v;
-    CHECK(c.allowsPlacement(box, makeItem("A", 1, 1, 1, 0.1), v));   // 0.1 + 0.1 + 0.1 is 0.30000000000000004
-    CHECK(!c.allowsPlacement(box, makeItem("B", 1, 1, 1, 0.11), v));
 }

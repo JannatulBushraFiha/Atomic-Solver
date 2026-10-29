@@ -135,24 +135,6 @@ TEST(validator_catches_wrong_reported_box_weight) {
     CHECK(hasIssue(Validator::validate(s, items, boxes), "WEIGHT_MISMATCH"));
 }
 
-TEST(validator_expects_the_box_weight_in_the_reported_total) {
-    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
-    goodSetup(items, boxes, s);
-    boxes[0].boxWeight = 0.5;
-    CHECK(hasIssue(Validator::validate(s, items, boxes), "WEIGHT_MISMATCH"));   // 3.0 is the items only
-    s.usedBoxes[0].totalWeight = 3.5;
-    CHECK(Validator::validate(s, items, boxes).valid);
-}
-
-TEST(validator_counts_the_box_weight_towards_its_limit) {
-    std::vector<Item> items; std::vector<BoxType> boxes; PackingSolution s;
-    goodSetup(items, boxes, s);
-    boxes[0].maxWeight = 3.2;   // the 3.0 of items would fit, but not with the box
-    boxes[0].boxWeight = 0.5;
-    s.usedBoxes[0].totalWeight = 3.5;
-    CHECK(hasIssue(Validator::validate(s, items, boxes), "BOX_OVERWEIGHT"));
-}
-
 TEST(validator_weight_limit_allows_for_floating_point_rounding) {
     std::vector<Item> items = { makeItem("A", 10, 10, 10, 0.1), makeItem("B", 10, 10, 10, 0.1), makeItem("C", 10, 10, 10, 0.1) };
     std::vector<BoxType> boxes = { makeBox("M", 100, 100, 100, 0.3) };

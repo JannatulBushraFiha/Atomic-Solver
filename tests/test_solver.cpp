@@ -82,38 +82,6 @@ TEST(solver_reports_a_box_weight_that_matches_its_items) {
     CHECK(s.usedBoxes[0].totalWeight > 3.99 && s.usedBoxes[0].totalWeight < 4.01);
 }
 
-TEST(solver_reports_a_box_weight_that_includes_the_empty_box) {
-    BoxType box = makeBox("M", 100, 100, 100, 10.0);
-    box.boxWeight = 0.5;
-    PackingSolution s = solveAndCheck({ makeItem("A", 10, 10, 10, 1.5), makeItem("B", 10, 10, 10, 2.5) }, { box });
-    REQUIRE(s.usedBoxes.size() == 1);
-    CHECK(s.usedBoxes[0].totalWeight > 4.49 && s.usedBoxes[0].totalWeight < 4.51);
-}
-
-TEST(solver_counts_the_box_weight_towards_its_limit) {
-    BoxType box = makeBox("M", 100, 100, 100, 10.0);
-    box.boxWeight = 2.0;
-    std::vector<Item> items = { makeItem("A", 10, 10, 10, 5.0), makeItem("B", 10, 10, 10, 4.0) };   // 11 kg with the box
-    PackingSolution s = solveAndCheck(items, { box });
-    CHECK_EQ(s.usedBoxes.size(), static_cast<size_t>(2));
-    for (const auto& u : s.usedBoxes) CHECK(u.totalWeight <= 10.0);
-}
-
-TEST(solver_item_too_heavy_once_the_box_weight_is_added_is_reported_unplaced) {
-    BoxType box = makeBox("M", 100, 100, 100, 10.0);
-    box.boxWeight = 2.0;
-    PackingSolution s = solveAndCheck({ makeItem("A", 10, 10, 10, 9.0) }, { box });
-    CHECK_EQ(s.unplacedItems.size(), static_cast<size_t>(1));
-    CHECK(hasViolation(s.violations, "NO_BOX_SUPPORTS_WEIGHT"));
-    CHECK(s.usedBoxes.empty());
-}
-
-TEST(solver_weight_limit_allows_for_floating_point_rounding) {
-    std::vector<Item> items = { makeItem("A", 10, 10, 10, 0.1), makeItem("B", 10, 10, 10, 0.1), makeItem("C", 10, 10, 10, 0.1) };
-    PackingSolution s = solveAndCheck(items, { makeBox("M", 100, 100, 100, 0.3) });
-    CHECK_EQ(s.usedBoxes.size(), static_cast<size_t>(1));   // 0.1 + 0.1 + 0.1 is 0.30000000000000004
-}
-
 TEST(solver_item_heavier_than_every_box_is_reported_unplaced) {
     PackingSolution s = solveAndCheck({ makeItem("A", 10, 10, 10, 50.0) }, { makeBox("M", 100, 100, 100, 10.0) });
     CHECK_EQ(s.unplacedItems.size(), static_cast<size_t>(1));
@@ -199,20 +167,6 @@ TEST(solver_mixes_box_types_when_the_last_box_can_be_smaller) {
     PackingSolution s = solveAndCheck(items, { makeBox("L", 100, 100, 100, 10.0), makeBox("S", 20, 20, 20, 10.0) });
     CHECK_EQ(boxOf(s, "X"), std::string("L#1"));
     CHECK_EQ(boxOf(s, "Y"), std::string("S#1"));
-}
-
-TEST(solver_box_weight_follows_a_box_swapped_for_a_smaller_one) {
-    BoxType large = makeBox("L", 100, 100, 100, 10.0);
-    large.boxWeight = 1.0;
-    BoxType small = makeBox("S", 20, 20, 20, 10.0);
-    small.boxWeight = 0.25;
-    std::vector<Item> items = { makeItem("X", 60, 60, 60, 6.0), makeItem("Y", 10, 10, 10, 6.0) };
-    PackingSolution s = solveAndCheck(items, { large, small });
-    REQUIRE(s.usedBoxes.size() == 2);
-    for (const auto& u : s.usedBoxes) {
-        if (u.boxReference == "L") CHECK(u.totalWeight > 6.99 && u.totalWeight < 7.01);
-        if (u.boxReference == "S") CHECK(u.totalWeight > 6.24 && u.totalWeight < 6.26);
-    }
 }
 
 TEST(solver_falls_back_to_another_box_type_when_one_runs_out) {

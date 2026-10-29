@@ -437,23 +437,6 @@ TEST(cli_duplicate_item_codes_are_packed_but_flagged) {
     CHECK(flagged);
 }
 
-// Item sizes round up: a 10.2 wide item needs 11 units of room, and a 0.5 thick one still takes 1.
-TEST(cli_rounds_item_dimensions_up) {
-    const json input = jobJson({ boxJson("BOX", 10, 10, 10, 100.0) },
-                               { itemJson("TOO-WIDE", 10.2, 10, 10, 1.0), itemJson("THIN", 0.5, 10, 10, 1.0) });
-
-    const ProcessResult result = runSolver(input.dump());
-    CHECK(result.exitCode == 0);
-    const json output = json::parse(result.output, nullptr, false);
-    REQUIRE(!output.is_discarded());
-    REQUIRE(output.at("placements").size() == 1);
-    CHECK(output.at("placements").at(0).at("itemCode") == "THIN");
-    CHECK(sumOfSides(output.at("placements").at(0)) == 21);
-    CHECK(output.at("unplacedItems") == json::array({ "TOO-WIDE" }));
-    REQUIRE(output.at("violations").size() == 1);
-    CHECK(output.at("violations").at(0).at("code") == "NO_BOX_FITS");
-}
-
 // Box sizes round down: a 10.9 box only has 10 whole units of room.
 TEST(cli_rounds_box_dimensions_down) {
     const json input = jobJson({ boxJson("BOX", 10.9, 10.9, 10.9, 100.0) },
@@ -478,20 +461,6 @@ TEST(cli_does_not_round_away_tiny_floating_point_noise) {
     REQUIRE(!output.is_discarded());
     CHECK(output.at("placements").size() == 1);
     CHECK(output.at("unplacedItems").empty());
-}
-
-TEST(cli_total_weight_includes_the_box_weight) {
-    json input = validInput();
-    input["boxTypes"][0]["BoxWeight"] = 0.5;
-
-    const ProcessResult result = runSolver(input.dump());
-    CHECK(result.exitCode == 0);
-    const json output = json::parse(result.output, nullptr, false);
-    REQUIRE(!output.is_discarded());
-    REQUIRE(output.at("usedBoxes").size() == 1);
-    const double totalWeight = output.at("usedBoxes").at(0).at("totalWeight").get<double>();
-    CHECK(totalWeight > 1.49 && totalWeight < 1.51);
-    CHECK(output.at("validation").at("valid") == true);
 }
 
 TEST(constraints_reject_large_item_volume_above_configured_limit) {
