@@ -8,7 +8,8 @@ COPY CMakeLists.txt .
 COPY include/ include/
 COPY src/ src/
 
-RUN cmake -S . -B build && cmake --build build
+# RUN cmake -S . -B build && cmake --build build
+RUN cmake -S . -B build -DBUILD_TESTS=OFF && cmake --build build
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
