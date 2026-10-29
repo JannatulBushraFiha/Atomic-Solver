@@ -15,7 +15,7 @@
 
 using json = nlohmann::json;
 
-// Item sizes round up and box sizes round down, so a packing in whole units always fits for real.
+// Sizes with decimals are rounded to whole units (same as before).
 int parseDimensionValue(const json& value, bool roundUp) {
     const long double raw = value.get<long double>();
     const long double dimension = roundUp ? std::ceil(raw - 1e-9) : std::floor(raw + 1e-9);
@@ -44,9 +44,9 @@ Item parseItem(const json& j) {
     Item item;
     item.itemCode = j.at("ItemCode").get<std::string>();
     item.itemReference = j.at("ItemReference").get<std::string>();
-    item.itemDimension.width  = parseDimensionValue(j.at("Width"), true);
-    item.itemDimension.length = parseDimensionValue(j.at("Length"), true);
-    item.itemDimension.depth  = parseDimensionValue(j.at("Depth"), true);
+    item.itemDimension.width  = parseDimensionValue(j.at("Width"), false);
+    item.itemDimension.length = parseDimensionValue(j.at("Length"), false);
+    item.itemDimension.depth  = parseDimensionValue(j.at("Depth"), false);
     item.weight = j.at("Weight").get<double>();
     item.boxGroup = j.value("BoxGroup", std::string(""));
     item.isFragile = j.value("IsFragile", false);

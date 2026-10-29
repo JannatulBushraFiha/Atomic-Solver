@@ -245,15 +245,17 @@ ValidationResult Validator::validate(
             add(result, "EMPTY_BOX", "", "Box " + label + " was opened but holds nothing");
         }
 
-        auto boxEntry = boxesByReference.find(used.boxReference);
-        const double boxWeight = boxEntry == boxesByReference.end() ? 0.0 : boxEntry->second->boxWeight;
-        const double totalWeight = boxWeight + packedWeight;
-
-        if (std::fabs(totalWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
+        // auto boxEntry = boxesByReference.find(used.boxReference);
+        // const double boxWeight = boxEntry == boxesByReference.end() ? 0.0 : boxEntry->second->boxWeight;
+        // const double totalWeight = boxWeight + packedWeight;
+        if (std::fabs(packedWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
+        // if (std::fabs(totalWeight - used.totalWeight) > WEIGHT_TOLERANCE) {
             add(result, "WEIGHT_MISMATCH", "",
                 "Box " + label + " reports " + weightText(used.totalWeight) +
-                " but the box and its items weigh " + weightText(totalWeight));
+                " but its items weigh " + weightText(packedWeight));
         }
+        
+        auto boxEntry = boxesByReference.find(used.boxReference);
 
         if (boxEntry == boxesByReference.end()) {
             add(result, "UNKNOWN_BOX_REFERENCE", "",
@@ -262,9 +264,9 @@ ValidationResult Validator::validate(
         }
         const BoxType& boxType = *boxEntry->second;
 
-        if (boxType.maxWeight > 0.0 && totalWeight > boxType.maxWeight + WEIGHT_TOLERANCE) {
+        if (boxType.maxWeight > 0.0 && packedWeight > boxType.maxWeight + WEIGHT_TOLERANCE) {
             add(result, "BOX_OVERWEIGHT", "",
-                "Box " + label + " weighs " + weightText(totalWeight) +
+                "Box " + label + " holds " + weightText(packedWeight) +
                 " which is over its limit of " + weightText(boxType.maxWeight));
         }
     }
