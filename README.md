@@ -1,5 +1,19 @@
 # Atomic-Solver
+## Introduction
 
+**Atomic-Solver** is a 3D bin-packing engine written in C++17 that works out how to pack a set of items into shipping boxes (cartons). You give it the available box types and the items to ship. It returns a packing plan that says which box each item goes in, its exact (x, y, z) position, and the orientation it is placed in. The goal is to use as few boxes, and as little total box volume, as possible.
+
+The solver goes beyond simply fitting items by size. It also enforces real-world shipping rules:
+
+- **Weight limits:** each box's maximum load, including the weight of the box itself
+- **Box availability:** inactive box types and a maximum number of boxes per type
+- **Grouping:** items that share a `BoxGroup` are packed together
+- **Fragile items and dangerous goods:** these are packed alone, and limits apply to what can be stacked on fragile items
+- **Lid clearance:** a small headroom is left at the top of each box so the lid can close
+
+To find a good plan, the solver tries several packing orders (largest footprint first, heaviest first, largest volume first). It places each item using a best-fit heuristic that fills the floor first. It then improves the result with a consolidation pass and a deterministic "ruin and recreate" search, so the same input always produces the same output. Before a plan is returned, an independent **Validator** checks that it is physically valid: no overlaps, no item outside its box, no broken constraints, and every item accounted for.
+
+The solver reads JSON on standard input and writes JSON on standard output. This makes it easy to use from the command line or from other programs. The repo also includes a small **Flask API** (`POST /api/solve`) and a **Dockerfile**, so the solver can be deployed as a web service.
 ## **In order to build the program:**
 cmake -S . -B build && cmake --build build
 
