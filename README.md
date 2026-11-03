@@ -1,7 +1,7 @@
 # Atomic-Solver
 ## Introduction
 
-**Atomic-Solver** is a 3D bin-packing engine written in C++17 that works out how to pack a set of items into shipping boxes (cartons). You give it the available box types and the items to ship. It returns a packing plan that says which box each item goes in, its exact (x, y, z) position, and the orientation it is placed in. The goal is to use as few boxes, and as little total box volume, as possible.
+**Atomic-Solver** is a 3D bin-packing engine written in C++20 that works out how to pack a set of items into shipping boxes (cartons). You give it the available box types and the items to ship. It returns a packing plan that says which box each item goes in, its exact (x, y, z) position, and the orientation it is placed in. The goal is to use as few boxes, and as little total box volume, as possible.
 
 The solver goes beyond simply fitting items by size. It also enforces real-world shipping rules:
 
@@ -96,7 +96,7 @@ echo '{
 
 16. I want automated tests for the constraints, validator and solver, so a change that breaks a rule (like items weighing 0 kg slipping past the dangerous goods, fragile and group rules) is caught before it is merged
 
-## Project Descriptiom
+## Project Description
 
 ### 1. Algorithm (What it solves)
 
@@ -232,7 +232,7 @@ After packing, the validator re-checks the result against the original input. It
 | A box was opened but holds nothing | `EMPTY_BOX` |
 | An item is listed as unplaced twice | `DUPLICATE_UNPLACED_ITEM` |
 
-t also checks that items are not rotated when they must not be, no inactive box type is used, no type exceeds `MaximumBoxes`, box groups are not mixed, dangerous goods classes and fragile items are not mixed with other goods, and every input item appears exactly once, either placed or unplaced.
+It also checks that items are not rotated when they must not be, no inactive box type is used, no type exceeds `MaximumBoxes`, box groups are not mixed, dangerous goods classes and fragile items are not mixed with other goods, and every input item appears exactly once, either placed or unplaced.
 
 **Example: valid result**
 
@@ -269,3 +269,150 @@ Weights are decimals, and computers store decimals with tiny rounding errors (fo
 | `prohibitedDangerousGoodsClasses` | `Constraints` | Dangerous goods classes that are rejected |
 | Item limits | `Constraints` | Optional maximum item weight, volume and dimensions |
 | Rotation and box groups | `Constraints` | Switches for allowing rotation and enforcing box groups |
+
+## 3. Testing
+
+The tests live in the **tests** folder. CMake builds them into two programs, **unitTests** and **integrationTest**, and ctest runs both (see "To run the tests" above). No test library is needed: both programs use a small framework written for this project.
+
+There are **202 tests** in total: 139 unit tests and 63 integration tests. All of them pass on the current code.
+
+### How the test framework works
+
+**test_helpers.h** holds the framework and the shared helpers.
+
+| Piece | What it does |
+|---|---|
+| **TEST(name)** | Defines a test and adds it to a global list when the program starts, so tests never have to be registered by hand. |
+| **CHECK(x)** | If x is false, prints the file and line and marks the test as failed, then carries on so one run shows every problem. |
+| **CHECK_EQ(a, b)** | Same as CHECK, but also prints both values. |
+| **REQUIRE(x)** | Same as CHECK, but stops the test straight away. Used before reading something that may not exist, such as the first placement. |
+
+**test_main.cpp** loops through the list, runs each test and prints **[ PASS ]** or **[ FAIL ]** next to its name. If a test throws an exception it is caught and counted as a failure, so one crash does not stop the run. At the end it prints "X of Y tests passed" and exits with 0 if everything passed or 1 if not, which is what ctest reads.
+
+The helper file also has builders (**makeItem**, **makeFragile**, **makeDangerous**, **makeGrouped** and **makeBox**) so a test can set up an item or box in one line, and four checks that are reused across the solver tests:
+
+| Helper | What it checks |
+|---|---|
+| **everyItemAccountedFor** | Every input item appears exactly once in the output, either placed or unplaced. |
+| **stackingIsLegal** | No item rests on a lighter item, and the weight on a fragile item is at most half of its own weight. The validator does not check stacking, so the tests do. |
+| **boxesNumberedFromOne** | Boxes of each type are numbered 1, 2, 3 and so on with no gaps. |
+| **boxOf** | Returns the box an item ended up in (for example M#1), so a test can check two items were kept apart. |
+
+Most solver tests go through **solveAndCheck**. It runs the solver, passes the result to the validator, then runs the first three checks above. This means every solver test also proves the packing is valid, even when the test itself is about something else such as box choice.
+
+### Unit tests
+
+| File | Tests | What it covers |
+|---|---|---|
+| **test_constraints.cpp** | 40 | The rotation code and the Constraints checks, called directly |
+| **test_solver.cpp** | 43 | The full solver on small jobs with a known answer, plus random jobs |
+| **test_validator.cpp** | 35 | The validator on packings built by hand |
+| **test_edge_cases.cpp** | 21 | The solver program run from the command line with real JSON |
+
+#### test_constraints.cpp
+
+These tests call the Orientation and Constraints code on its own, without the solver.
+
+- **Rotations:** an item with three different sides gives exactly six rotations, all different, all with the same volume, and one of them is the original. Ordinary items get all six. Fragile items and dangerous goods get only one, the way they were given. Setting allowRotation to false gives one rotation for every item.
+- **Item check (checkItem):** each rejection reason has a test with an item built to trigger it. A zero or negative side gives INVALID_DIMENSIONS, a negative weight gives INVALID_WEIGHT, class 1 gives PROHIBITED_GOODS, going over a configured item limit gives ITEM_TOO_HEAVY or ITEM_TOO_LARGE, no active boxes gives NO_BOX_AVAILABLE, too big for every box gives NO_BOX_FITS and too heavy for every box gives NO_BOX_SUPPORTS_WEIGHT.
+- **Edges of the item check:** a 0 kg item is accepted, an item exactly at the weight limit is accepted, inactive boxes are ignored when looking for a fit, and an item that only fits when turned is accepted unless it is fragile, dangerous goods, or rotation is switched off. A box that fits but is too weak, next to a box that is strong enough but too small, gives NO_BOX_FITS with a message that mentions the weight.
+- **Placement (allowsPlacement):** these tests build the state of a box by hand (its current weight, item count, group and flags) and ask whether an item may join it. They cover the weight limit (exactly at the limit is allowed, over is refused), mixed box groups (refused unless the rule is switched off), items with no group (allowed anywhere), dangerous goods and ordinary items in both directions, two dangerous goods classes, and fragile items only joining other fragile items.
+- **The 0 kg bug:** a box holding only 0 kg items has a weight of zero but is not empty. These tests set the item count to 1 and the weight to 0, then check that a dangerous goods item or a fragile item is still refused. The rule now looks at how many items are in the box instead of its weight.
+
+#### test_solver.cpp
+
+These tests run the full PackingSolver on small jobs where the right answer is known, so the test can check the exact result and not just that it is valid.
+
+| Group | What is tested |
+|---|---|
+| **Basics** | An empty job gives an empty result. One item goes in one box at (0, 0, 0). An item exactly the size of the box fits. An item that only fits on its side is turned to fit. 27 cubes of 10 fill a 30 cube in exactly one box. |
+| **Weight** | Three 4 kg items with a 10 kg limit need 2 boxes. The reported box weight matches its items. An item heavier than every box is unplaced with NO_BOX_SUPPORTS_WEIGHT. A MaxWeight of 0 means no limit. |
+| **Unplaceable items** | Items that are too big, prohibited, have a bad size or weight, have no boxes to go in, or are fragile or dangerous goods that only fit when turned. Each one must be in unplacedItems with the right violation code, and the other items in the same job must still be packed. |
+| **Box types** | Inactive types are never used. MaximumBoxes is respected and the extra item is unplaced. The smaller box is chosen when everything fits in it. A plan can mix a large and a small box. When one type runs out, the solver moves on to another. |
+| **Settings** | With rotation off, an item that only fits when turned is unplaced. With the group rule off, two groups share one box. |
+| **Separation rules** | Dangerous goods get their own box. Different classes never share, the same class can. Fragile items get their own box. Different box groups never share, the same group can, and items with no group can join any group. |
+| **0 kg items** | Four tests pack a 0 kg item with a dangerous goods or fragile item (and the other way round). The two always end up in different boxes. Ten 0 kg items all pack into one box. |
+| **Stacking** | A 5 kg and a 1 kg cube go in a box only tall enough to stack them, and the 5 kg cube must be at the bottom. A second test feeds stacks built by hand into stackingIsLegal to prove the helper really catches a bad stack. |
+
+**Random jobs.** The **randomItems** function makes items with random sizes and weights from a fixed seed (std::mt19937), so the same seed gives the same items on every machine. Roughly 1 in 10 items are fragile, 1 in 10 are dangerous goods (class 3 or 4), 1 in 10 belong to a box group, and about 1 in 10 weigh 0 kg. Five tests use it to run **74 random jobs** of 40 to 60 items each:
+
+- plain jobs (25 seeds)
+- items with several flags at once, such as fragile dangerous goods in a box group (16 seeds)
+- boxes with their own weight set (16 seeds)
+- rotation switched off, checking every item keeps its original size on each axis (6 seeds)
+- a limit of 2 small and 3 large boxes, checking the limits hold (11 seeds)
+
+Every random job goes through solveAndCheck. Every item is small enough to fit the small box on its own, so apart from the box limit test, nothing may be left unplaced.
+
+**Same answer every time.** The same 50 random items are solved twice, and every field of every placement (item, box, instance, position and size) must match.
+
+**Speed.** 150 random items must solve in under 5 seconds. The limit is generous so it does not fail on a slow laptop or an unoptimised build, so it is a smoke test for the 1 to 2 second requirement rather than a benchmark. On a development laptop it takes about 0.55 seconds with the default build and about 0.1 seconds in a Release build.
+
+#### test_validator.cpp
+
+The validator checks a finished packing, so these tests build packings by hand without the solver. Most start from a correct packing (two 10 × 10 × 10 items side by side in a 100 × 100 × 100 box), break one thing, and check the validator reports the matching issue code.
+
+| Area | What is broken | Issue code expected |
+|---|---|---|
+| **Position** | Items overlap, an item sticks out of the box, a negative position | OVERLAP, OUT_OF_BOUNDS, NEGATIVE_POSITION |
+| **Weight** | Box over its limit, reported weight wrong | BOX_OVERWEIGHT, WEIGHT_MISMATCH |
+| **Items** | Item missing, placed twice, both placed and unplaced, unplaced with no reason, unknown item, duplicate code in the input, listed as unplaced twice | ITEM_MISSING, ITEM_PLACED_TWICE, ITEM_PLACED_AND_UNPLACED, MISSING_REASON, UNKNOWN_ITEM, DUPLICATE_ITEM_CODE, DUPLICATE_UNPLACED_ITEM |
+| **Boxes** | Unknown box type, inactive box used, too many of one type, box opened but empty, box missing from the used list, instance number 0, same box listed twice | UNKNOWN_BOX_REFERENCE, INACTIVE_BOX, BOX_LIMIT_EXCEEDED, EMPTY_BOX, MISSING_USED_BOX, INVALID_BOX_INSTANCE, DUPLICATE_BOX_INSTANCE |
+| **Rules** | Fragile item turned, dangerous goods mixed with ordinary items or another class, fragile mixed with ordinary, two box groups in one box | INVALID_ROTATION, DANGEROUS_GOODS_MIXED, FRAGILE_NOT_SEPARATE, MIXED_BOX_GROUPS |
+
+Overlap and bounds are tested on every axis. The items are 10 × 20 × 30 so that mixing up width, length and depth anywhere in the code would show up. Moving an item one unit into its neighbour must give OVERLAP, and moving it so they only touch must not. An item touching the far wall is fine, and one unit further must give OUT_OF_BOUNDS. Two items in the same spot but in different boxes are not an overlap.
+
+Other tests check the validator does not raise false alarms. Three 0.1 kg items in a box with a 0.3 kg limit pass, even though 0.1 + 0.1 + 0.1 is stored as slightly more than 0.3. Mixed groups pass when the group rule is off, and fragile items or dangerous goods of the same class may share a box.
+
+#### test_edge_cases.cpp
+
+Most of these tests run the real **solver** program, the same way a user or the Flask API would. The **runSolver** helper writes the input JSON to a temporary file, runs the solver with that file as standard input, then reads back the output and exit code. CMake passes the path of the built solver into the test program and makes sure the solver is built first.
+
+| Area | What is tested |
+|---|---|
+| **Bad input** | Broken JSON, missing boxTypes, a width of "wide", a missing or text weight, boxTypes or items sent as an object instead of a list, a Quantity of 0, negative or 2.5, weights of NaN, Infinity or 1e309, and a side larger than the integer range (2147483648). Each must exit with a code other than 0 and an error starting with "Invalid JSON:" or "Bad input:". |
+| **Quantity** | A missing Quantity means 1. A Quantity of 3 gives three placements, all reported under the original code. 3.0 is accepted as 3. Unplaced units are also reported under the original code. |
+| **Code clashes** | BOOK with a Quantity of 2 is packed next to a real item called BOOK-1. The test tells them apart by size and checks there are exactly two BOOK placements and one BOOK-1. |
+| **Duplicate codes** | Two items with the same code are both packed, and the validation output flags DUPLICATE_ITEM_CODE. |
+| **Rounding sizes** | A 10.9 box is rounded down to 10, so a 10 cube fits and an 11 long item does not. A 9.9999999999 box still takes a 10.0000000001 item, so tiny floating point noise is not rounded the wrong way. |
+
+The last three tests call the code directly. One checks that a huge item (a million units on each side) is rejected as ITEM_TOO_LARGE against a volume limit without the volume overflowing. The other two check the fragile load limit on a 10 kg fragile base: a 4.9 kg or 5.0 kg item is stacked on top of it in the same box, and a 5.1 kg item is put in a second box.
+
+### Integration tests
+
+**integrationTest.cpp** is a separate program with its own copy of the same idea (TEST_CASE, CHECK and REQUIRE). It prints **[ RUN ]** before each test and **[ OK ]** or **[ FAIL ]** after, then a passed and failed count. It is split into four sections:
+
+| Section | Tests | What it does |
+|---|---|---|
+| **1. Validator** | 26 | Solutions built by hand and fed to the validator, one broken rule per test, the same idea as test_validator.cpp. |
+| **2. Solver** | 7 | The solver alone: smallest box that fits, items sharing a box, a second box opened when the first is full, weight limit, MaximumBoxes, an item too large for every box, inactive box types. |
+| **3. Integration** | 20 | The solver output is passed straight into the validator with the same constraints, and the result must be valid. |
+| **4. Constraints** | 10 | checkItem and allowsPlacement called directly, including 0 kg dangerous goods of the same and different classes. |
+
+Section 3 is the important one. The solver and the validator are written separately, so this section proves they agree once wired together. If the solver ever makes a placement the validator thinks is illegal, the test fails. It covers a small three item order, mixed box types and instances, a weight limit that forces at least 3 boxes, an item too big to pack (still a valid result as long as it is reported), box groups, an empty order, no boxes at all, a 50 item seeded random order, an item exactly the size of the box and one a single unit too long, items exactly at the box weight limit, a MaximumBoxes of 0, and eight jobs mixing 0 kg and normal weight items with dangerous goods and fragile items.
+
+### Results
+
+Running ctest on the current code:
+
+```
+1/2 Test #1: integrationTest ..................   Passed    0.06 sec
+2/2 Test #2: unitTests ........................   Passed    1.35 sec
+
+100% tests passed out of 2
+```
+
+All 139 unit tests and all 63 integration tests pass.
+
+### What the tests do not cover
+
+- The Flask API (app.py) and the Docker deployment have no automated tests.
+- The speed test checks a single 150 item order. It does not test the peak load of 1000 orders per second from the requirements.
+
+## Conclusion
+
+Atomic-Solver takes a list of items and box types as JSON and returns a packing plan: which boxes to open, which box each item goes in, and exactly where and which way round it sits. It builds several plans with a best fit heuristic that fills the floor first, keeps the one with the most items placed, then the fewest boxes, then the least box volume, and improves it with a consolidation pass and a seeded ruin and recreate search. The same input always gives the same output.
+
+The shipping rules (weight limits, box stock, box groups, fragile items, dangerous goods and stacking) are enforced twice: by **Constraints** while packing, and again by an independent **Validator** on the finished plan. Any item that cannot be packed is reported in unplacedItems with a reason, and validation.valid tells the caller (Portal) whether the result can be trusted.
+
+The solver runs from the command line, or as a web service through the Flask API on Render. It is covered by **202 automated tests** across the constraints, the solver, the validator, the command line, and the solver and validator working together, and all of them pass.
